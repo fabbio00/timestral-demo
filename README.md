@@ -25,6 +25,16 @@ uv run python scripts/bdg2_smoke.py
 
 Results land in `results/`.
 
+## Results page
+
+```bash
+uv run python scripts/export_frontend.py   # after the runs above; writes frontend/data.js
+open frontend/index.html
+```
+
+The page is static: metrics come from `results/`, plotted series from the
+showcase windows the export script re-forecasts.
+
 ## Caveats
 
 - Timestral weights are under Mistral's Modified MIT license: no rights for

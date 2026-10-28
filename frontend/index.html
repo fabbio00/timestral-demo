@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timestral vs Chronos-2</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --actual: #0b0b0b;
+    --timestral: #2a78d6;
+    --chronos: #eb6834;
+    --baseline: #898781;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #f0efec;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --actual: #f0efec;
+      --timestral: #3987e5;
+      --chronos: #d95926;
+      --baseline: #898781;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --actual: #f0efec;
+    --timestral: #3987e5;
+    --chronos: #d95926;
+    --baseline: #898781;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+  header h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--ink-2); max-width: 720px; }
+
+  section {
+    margin-top: 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  section h2 { font-size: 20px; margin: 0 0 16px; }
+
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0 0 24px; }
+  .facts div { border-top: 2px solid var(--grid); padding-top: 10px; }
+  .facts dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+  .facts dd { margin: 0; color: var(--ink-2); }
+
+  .table-wrap { overflow-x: auto; margin-bottom: 24px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 600; color: var(--ink-2); font-size: 13px; }
+  td { font-variant-numeric: tabular-nums; }
+  tr.reference td { color: var(--muted); font-style: italic; }
+  tr.best td { font-weight: 600; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 0; }
+  .note { font-size: 13px; color: var(--muted); margin: -16px 0 24px; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; }
+  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  select {
+    font: inherit; font-size: 14px; color: var(--ink); background: var(--page);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; min-width: 200px; max-width: 100%;
+  }
+  .chart { width: 100%; height: 420px; }
+  .window-score { font-size: 13px; color: var(--ink-2); margin-top: 4px; min-height: 20px; }
+
+  @media (max-width: 720px) {
+    .facts { grid-template-columns: 1fr; }
+    section { padding: 16px; }
+    .chart { height: 340px; }
+    select { min-width: 0; width: 100%; }
+    .controls label { flex: 1 1 100%; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Timestral vs Chronos-2</h1>
+    <p>Previsioni zero-shot su due benchmark industriali pubblici: nessun modello è stato addestrato su questi dati.
+       Le linee sono la previsione mediana, le bande l'intervallo in cui il modello si aspetta il valore reale 8 volte su 10.</p>
+  </header>
+
+  <section id="sdwpf">
+    <h2>Produzione di un parco eolico · KDD Cup 2022</h2>
+    <dl class="facts">
+      <div><dt>Dataset</dt><dd>134 turbine di un parco eolico in Cina, una misura ogni 10 minuti. Usato nella KDD Cup 2022, con oltre 2.400 team in gara.</dd></div>
+      <div><dt>Dati in input</dt><dd>Gli ultimi 14 giorni di potenza prodotta da ciascuna turbina. Niente vento né meteo.</dd></div>
+      <div><dt>Obiettivo</dt><dd>Prevedere la potenza delle 48 ore successive, sui 142 casi di test ufficiali della gara.</dd></div>
+    </dl>
+    <div class="table-wrap"><table id="sdwpf-metrics"></table></div>
+    <p class="note" id="sdwpf-note"></p>
+    <div class="controls">
+      <label>Caso di test <select id="sdwpf-case"></select></label>
+      <label>Serie <select id="sdwpf-series"></select></label>
+    </div>
+    <div class="window-score" id="sdwpf-window"></div>
+    <div class="chart" id="sdwpf-chart"></div>
+  </section>
+
+  <section id="bdg2">
+    <h2>Consumi elettrici di edifici industriali · ASHRAE GEPIII</h2>
+    <dl class="facts">
+      <div><dt>Dataset</dt><dd>Contatori elettrici orari di edifici industriali (manifatture, centrali di servizio, magazzini, laboratori). È la base dati della gara Kaggle ASHRAE GEPIII, con 3.614 team.</dd></div>
+      <div><dt>Dati in input</dt><dd>Circa 6 mesi di consumi orari di ogni edificio e la temperatura esterna del sito.</dd></div>
+      <div><dt>Obiettivo</dt><dd>Prevedere il consumo delle 48 ore successive, partendo da 9 date diverse del 2017.</dd></div>
+    </dl>
+    <div class="table-wrap"><table id="bdg2-metrics"></table></div>
+    <p class="note">Riduzione dell'errore rispetto a "ripetere la settimana precedente". Copertura: quante volte il valore reale cade nella banda, idealmente l'80%.</p>
+    <div class="controls">
+      <label>Edificio <select id="bdg2-building"></select></label>
+      <label>Inizio previsione <select id="bdg2-origin"></select></label>
+    </div>
+    <div class="window-score" id="bdg2-window"></div>
+    <div class="chart" id="bdg2-chart"></div>
+  </section>
+</main>
+
+<script src="data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script>
+const DATA = window.DEMO_DATA;
+
+const LABELS = {
+  "Timestral-209M": "Timestral-209M",
+  "Chronos-2": "Chronos-2",
+  "Persistence": "Persistenza (ultimo valore)",
+  "Seasonal naive": "Ripeti settimana precedente",
+};
+const label = (name) => {
+  const withTemp = name.endsWith(" + temp");
+  const base = LABELS[name.replace(" + temp", "")] || name;
+  return withTemp ? `${base} + temperatura` : base;
+};
+const colorVar = (name) =>
+  name.startsWith("Timestral") ? "--timestral" : name.startsWith("Chronos") ? "--chronos" : "--baseline";
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (x, d = 2) => x.toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+function swatch(name) {
+  return `<span class="swatch" style="background:var(${colorVar(name)})"></span>`;
+}
+
+// ---------- tables ----------
+function sdwpfTable() {
+  const rows = DATA.sdwpf.metrics;
+  const best = rows.find((r) => !r.reference).model;
+  document.getElementById("sdwpf-metrics").innerHTML =
+    `<tr><th>Modello</th><th>Punteggio gara</th><th>MAE (MW)</th><th>RMSE (MW)</th><th>Tempo per caso</th></tr>` +
+    rows.map((r) => r.reference
+      ? `<tr class="reference"><td>${r.model}</td><td>${fmt(r.score)}</td><td></td><td></td><td></td></tr>`
+      : `<tr class="${r.model === best ? "best" : ""}"><td>${swatch(r.model)}${label(r.model)}</td><td>${fmt(r.score)}</td>` +
+        `<td>${fmt(r.mae)}</td><td>${fmt(r.rmse)}</td><td>${fmt(r.seconds, 1)} s</td></tr>`).join("");
+  const n = DATA.sdwpf.nCases;
+  document.getElementById("sdwpf-note").textContent =
+    `Punteggio ufficiale della gara: media di MAE e RMSE sommati sulle 134 turbine, più basso è meglio. ` +
+    (n < 142 ? `Calcolato su ${n} dei 142 casi: risultato preliminare.` : `Calcolato su tutti i 142 casi.`);
+}
+
+function bdg2Table() {
+  const rows = DATA.bdg2.metrics;
+  document.getElementById("bdg2-metrics").innerHTML =
+    `<tr><th>Modello</th><th>MAE (kWh)</th><th>Riduzione errore</th><th>Copertura banda</th><th>Tempo totale</th></tr>` +
+    rows.map((r, i) => `<tr class="${i === 0 ? "best" : ""}"><td>${swatch(r.model)}${label(r.model)}</td>` +
+      `<td>${fmt(r.mae)}</td><td>${r.skill > 0 ? "−" + fmt(r.skill, 1) + "%" : "—"}</td>` +
+      `<td>${r.model === "Seasonal naive" ? "—" : fmt(r.coverage, 0) + "%"}</td><td>${fmt(r.seconds, 1)} s</td></tr>`).join("");
+}
+
+// ---------- chart ----------
+function forecastTraces(x, forecasts, unit, bands) {
+  const traces = [];
+  for (const [name, f] of Object.entries(forecasts)) {
+    const color = css(colorVar(name));
+    const isBaseline = colorVar(name) === "--baseline";
+    if (bands && !isBaseline) {
+      traces.push({ x, y: f.hi, mode: "lines", line: { width: 0 }, hoverinfo: "skip", showlegend: false, legendgroup: name });
+      traces.push({ x, y: f.lo, mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: color + "1f",
+                    hoverinfo: "skip", showlegend: false, legendgroup: name });
+    }
+    traces.push({ x, y: f.mid, mode: "lines", name: label(name), legendgroup: name,
+                  line: { color, width: isBaseline ? 1.5 : 2 },
+                  hovertemplate: `%{y:.2f} ${unit}<extra>${label(name)}</extra>` });
+  }
+  return traces;
+}
+
+function drawChart(el, xHist, hist, xFut, actual, forecasts, unit, xTitle, origin, bands = true) {
+  const ink = css("--actual");
+  const traces = [
+    { x: xHist.concat(xFut), y: hist.concat(actual), mode: "lines", name: "Valore reale",
+      line: { color: ink, width: 1.5 }, hovertemplate: `%{y:.2f} ${unit}<extra>Reale</extra>` },
+    ...forecastTraces(xFut, forecasts, unit, bands),
+  ];
+  const axis = { gridcolor: css("--grid"), linecolor: css("--axis"), zeroline: false,
+                 tickfont: { color: css("--muted"), size: 12 } };
+  const titleFont = { color: css("--muted"), size: 12 };
+  const layout = {
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { family: "system-ui, -apple-system, Segoe UI, sans-serif", color: css("--ink-2") },
+    margin: { l: 56, r: 16, t: 40, b: 48 },
+    hovermode: "x unified",
+    hoverlabel: { bgcolor: css("--surface"), bordercolor: css("--axis"), font: { color: css("--ink") } },
+    legend: { orientation: "h", x: 0, y: 1.12, font: { size: 12 } },
+    xaxis: { ...axis, title: { text: xTitle, font: titleFont } },
+    yaxis: { ...axis, title: { text: unit, font: titleFont }, rangemode: "tozero" },
+    shapes: [{ type: "line", x0: origin, x1: origin, yref: "paper", y0: 0, y1: 1,
+               line: { color: css("--axis"), width: 1 } }],
+    annotations: [{ x: origin, y: 1, yref: "paper", text: "inizio previsione", showarrow: false,
+                    xanchor: "left", yanchor: "bottom", font: { size: 11, color: css("--muted") } }],
+  };
+  Plotly.react(el, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["lasso2d", "select2d"] });
+}
+
+function windowMae(actual, forecasts) {
+  return Object.entries(forecasts).map(([name, f]) => {
+    let s = 0, n = 0;
+    actual.forEach((v, i) => { if (v !== null) { s += Math.abs(v - f.mid[i]); n++; } });
+    return { name, mae: s / n };
+  }).sort((a, b) => a.mae - b.mae);
+}
+
+function windowLine(el, actual, forecasts, unit) {
+  el.innerHTML = "Errore medio in questa finestra: " +
+    windowMae(actual, forecasts).map((r) => `${swatch(r.name)}${label(r.name)} ${fmt(r.mae)} ${unit}`).join(" · ");
+}
+
+// ---------- SDWPF ----------
+const sdwpfCase = document.getElementById("sdwpf-case");
+const sdwpfSeries = document.getElementById("sdwpf-series");
+
+function drawSdwpf() {
+  const c = DATA.sdwpf.cases.find((c) => c.case === +sdwpfCase.value);
+  const s = c.series[sdwpfSeries.value];
+  const step = DATA.sdwpf.stepMinutes / 60;
+  const xHist = s.history.map((_, i) => (i - s.history.length) * step);
+  const xFut = s.actual.map((_, i) => i * step);
+  // Summing per-turbine quantiles gives no meaningful farm-level band, so the farm shows medians only.
+  const farm = sdwpfSeries.value === "Intero parco";
+  drawChart("sdwpf-chart", xHist, s.history, xFut, s.actual, s.forecasts, "MW", "ore dall'inizio della previsione", 0, !farm);
+  const el = document.getElementById("sdwpf-window");
+  windowLine(el, s.actual, s.forecasts, "MW");
+  if (farm) el.innerHTML += "<br>Per l'intero parco mostriamo solo le mediane: le bande sono per singola turbina.";
+}
+
+// ---------- BDG2 ----------
+const bdg2Building = document.getElementById("bdg2-building");
+const bdg2Origin = document.getElementById("bdg2-origin");
+
+function fillOrigins() {
+  const current = bdg2Origin.value;
+  const origins = DATA.bdg2.windows.filter((w) => w.building === bdg2Building.value).map((w) => w.origin);
+  bdg2Origin.innerHTML = origins.map((o) =>
+    `<option value="${o}">${new Date(o).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</option>`).join("");
+  // Early-2017 histories often start right after metering gaps, so default to mid-year.
+  bdg2Origin.value = origins.includes(current) ? current : origins[Math.floor(origins.length / 2)];
+}
+
+function drawBdg2() {
+  const w = DATA.bdg2.windows.find((w) => w.building === bdg2Building.value && w.origin === bdg2Origin.value);
+  const t0 = new Date(w.origin).getTime();
+  const hour = 3600 * 1000;
+  const stamp = (k) => new Date(t0 + k * hour).toISOString().slice(0, 16);
+  const xHist = w.history.map((_, i) => stamp(i - w.history.length));
+  const xFut = w.actual.map((_, i) => stamp(i));
+  drawChart("bdg2-chart", xHist, w.history, xFut, w.actual, w.forecasts, "kWh", "", stamp(0));
+  windowLine(document.getElementById("bdg2-window"), w.actual, w.forecasts, "kWh");
+}
+
+// ---------- init ----------
+function init() {
+  sdwpfTable();
+  bdg2Table();
+
+  sdwpfCase.innerHTML = DATA.sdwpf.cases.map((c) => `<option value="${c.case}">Caso ${c.case} di 142</option>`).join("");
+  sdwpfSeries.innerHTML = Object.keys(DATA.sdwpf.cases[0].series).map((s) => `<option>${s}</option>`).join("");
+
+  const usage = { "Manufacturing/industrial": "Manifattura", "Utility": "Centrale di servizio",
+                  "Warehouse/storage": "Magazzino", "Technology/science": "Laboratorio / data center" };
+  const order = Object.keys(usage);
+  const buildings = [...DATA.bdg2.buildings].sort((a, b) =>
+    order.indexOf(a.usage) - order.indexOf(b.usage) || b.sqm - a.sqm);
+  bdg2Building.innerHTML = buildings.map((b) =>
+    `<option value="${b.id}">${usage[b.usage] || b.usage} · ${b.detail} · ${fmt(b.sqm, 0)} m² (${b.id})</option>`).join("");
+  fillOrigins();
+
+  sdwpfCase.onchange = sdwpfSeries.onchange = drawSdwpf;
+  bdg2Building.onchange = () => { fillOrigins(); drawBdg2(); };
+  bdg2Origin.onchange = drawBdg2;
+  const redraw = () => { drawSdwpf(); drawBdg2(); };
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
+  redraw();
+}
+init();
+</script>
+</body>
+</html>

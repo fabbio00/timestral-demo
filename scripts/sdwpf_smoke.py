@@ -12,19 +12,8 @@ import numpy as np
 import pandas as pd
 
 from demo.kddcup import N_CASES, OUTPUT_LEN, clean_context, load_case, score_case
-from demo.models import QUANTILES, Chronos2Model, TimestralModel, timed_predict
+from demo.models import QUANTILES, Chronos2Model, Persistence, TimestralModel, timed_predict
 from demo.paths import RESULTS_DIR
-
-
-class Persistence:
-    """Last valid observation carried forward: the simplest operational baseline."""
-
-    name = "Persistence"
-
-    def predict(self, context, horizon, known_covariates=None):
-        last = pd.DataFrame(context.T).ffill().iloc[-1].fillna(0).values
-        point = np.repeat(last[:, None], horizon, axis=1)
-        return np.repeat(point[..., None], len(QUANTILES), axis=-1)
 
 
 def main():

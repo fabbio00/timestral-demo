@@ -7,6 +7,7 @@ Each wrapper takes a batch of contexts (B, T) plus optional known covariates
 import time
 
 import numpy as np
+import pandas as pd
 import torch
 
 from demo.paths import MODELS_DIR
@@ -78,6 +79,17 @@ class SeasonalNaive:
         context = np.asarray(context, dtype=np.float32)
         reps = int(np.ceil(horizon / self.season))
         point = np.tile(context[:, -self.season :], reps)[:, :horizon]
+        return np.repeat(point[..., None], len(QUANTILES), axis=-1)
+
+
+class Persistence:
+    """Last valid observation carried forward: the simplest operational baseline."""
+
+    name = "Persistence"
+
+    def predict(self, context, horizon, known_covariates=None):
+        last = pd.DataFrame(np.asarray(context).T).ffill().iloc[-1].fillna(0).values
+        point = np.repeat(last[:, None], horizon, axis=1)
         return np.repeat(point[..., None], len(QUANTILES), axis=-1)
 
 

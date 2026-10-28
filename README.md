@@ -26,14 +26,25 @@ scripts/download.sh        # ~3 GB tra pesi dei modelli e dataset, esclusi da gi
 
 ```bash
 uv run python scripts/sdwpf_smoke.py --cases 142   # ~30 min su Mac M4
-uv run python scripts/bdg2_smoke.py                # ~3 min
-uv run python scripts/export_frontend.py           # rigenera frontend/data.js
+uv run python scripts/sdwpf_arima.py               # AutoARIMA su 20 casi, ~7 min
+uv run python scripts/bdg2_smoke.py                # include AutoARIMA, ~8 min
+uv run python scripts/export_frontend.py           # rigenera frontend/data.js in pochi secondi
 open frontend/index.html
 ```
 
-La pagina è statica: le metriche vengono dai file in `results/`, i grafici
-dalle previsioni dei modelli sulle finestre di esempio. Non ci sono dati
-inventati.
+La pagina è statica e non ci sono dati inventati.
+- **Metriche:** vengono dai CSV in `results/`.
+- **Grafici:** usano le previsioni che i benchmark salvano in `results/forecasts/`, esclusa da git.
+  - Per l'eolico si salvano solo i 5 casi mostrati nella pagina (`kddcup.SHOWCASE_CASES`).
+  - Per BDG2 si salvano tutte le finestre.
+- **Export:** legge solo la cache e i CSV, quindi richiede pochi secondi.
+
+Per rigenerare solo la cache dell'eolico, senza toccare le metriche:
+
+```bash
+uv run python scripts/sdwpf_smoke.py --showcase-only   # ~1 min
+uv run python scripts/sdwpf_arima.py --showcase-only   # ~3 min
+```
 
 ## Struttura
 
@@ -43,6 +54,7 @@ inventati.
 | [src/demo/kddcup.py](src/demo/kddcup.py) | caricamento dei casi KDD Cup e punteggio ufficiale della gara |
 | [src/demo/bdg2.py](src/demo/bdg2.py) | caricamento BDG2, scelta degli edifici e delle finestre di test |
 | [src/demo/metrics.py](src/demo/metrics.py) | MAE, WQL e copertura delle bande |
+| [src/demo/cache.py](src/demo/cache.py) | cache delle previsioni tra benchmark ed export |
 | [scripts/](scripts/) | benchmark, export per il frontend, download |
 | [results/](results/) | metriche dei run completi (CSV) |
 | [frontend/index.html](frontend/index.html) | pagina dei risultati |
@@ -55,3 +67,7 @@ inventati.
   - BDG2: quei siti sono esclusi.
   - KDD Cup: i casi di test cadono tra maggio e ottobre 2021, dopo il periodo pubblicato per la gara. Però i dati completi sono pubblici dal 2024 e Mistral non dichiara i suoi dati di addestramento, quindi per Timestral non si può escludere.
 - **BDG2, temperatura:** è quella effettivamente misurata, cioè una previsione meteo perfetta. In produzione il guadagno dalle covariate sarà più basso.
+- **AutoARIMA:** un ARIMA stagionale con periodo di 24 ore costa 20-30 secondi per serie, perché il suo stato interno cresce col periodo. Per questo:
+  - sui consumi si usa un ARIMA non stagionale, con i cicli giornaliero e settimanale passati come termini di Fourier (10 coppie ciascuno);
+  - sull'eolico si stima sugli ultimi 3 giorni, e solo su 20 casi su 142.
+  - Il numero di termini di Fourier è stato scelto su 20 finestre di test: con meno termini ARIMA non batte nemmeno "ripeti la settimana precedente".

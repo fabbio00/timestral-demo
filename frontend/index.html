@@ -18,6 +18,7 @@
     --actual: #0b0b0b;
     --timestral: #2a78d6;
     --chronos: #eb6834;
+    --arima: #1baf7a;
     --baseline: #898781;
   }
   @media (prefers-color-scheme: dark) {
@@ -34,6 +35,7 @@
       --actual: #f0efec;
       --timestral: #3987e5;
       --chronos: #d95926;
+      --arima: #199e70;
       --baseline: #898781;
     }
   }
@@ -50,6 +52,7 @@
     --actual: #f0efec;
     --timestral: #3987e5;
     --chronos: #d95926;
+    --arima: #199e70;
     --baseline: #898781;
   }
 
@@ -98,12 +101,41 @@
   .chart { width: 100%; height: 420px; }
   .window-score { font-size: 13px; color: var(--ink-2); margin-top: 4px; min-height: 20px; }
 
+  .info {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; margin-left: 6px; padding: 0; vertical-align: 1px;
+    border: 1px solid var(--axis); border-radius: 50%; background: none; cursor: pointer;
+    font: italic 600 11px/1 Georgia, serif; color: var(--ink-2);
+  }
+  .info:hover, .info:focus-visible { border-color: var(--ink-2); outline: none; }
+  #tooltip {
+    position: fixed; z-index: 10; display: none; width: 340px; max-width: calc(100vw - 32px);
+    padding: 12px 14px; border-radius: 10px; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--axis); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    font-size: 13px; line-height: 1.5; white-space: normal; font-style: normal; font-weight: 400;
+  }
+  #tooltip strong { display: block; margin-bottom: 4px; }
+
+  .ideas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .ideas details { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; background: var(--page); }
+  .ideas summary { cursor: pointer; list-style: none; }
+  .ideas summary::-webkit-details-marker { display: none; }
+  .ideas summary h3 { font-size: 16px; margin: 0 0 4px; }
+  .ideas summary p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .ideas summary .more { display: inline-block; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .ideas details[open] summary .more { display: none; }
+  .ideas .body { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--grid); font-size: 14px; color: var(--ink-2); }
+  .ideas .body p { margin: 0 0 8px; }
+  .ideas .body ol { margin: 0 0 8px; padding-left: 20px; }
+  .lead { color: var(--ink-2); margin: -8px 0 20px; max-width: 760px; }
+
   @media (max-width: 720px) {
     .facts { grid-template-columns: 1fr; }
     section { padding: 16px; }
     .chart { height: 340px; }
     select { min-width: 0; width: 100%; }
     .controls label { flex: 1 1 100%; }
+    .ideas { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -111,7 +143,8 @@
 <main>
   <header>
     <h1>Timestral vs Chronos-2</h1>
-    <p>Previsioni zero-shot su due benchmark industriali pubblici: nessun modello è stato addestrato su questi dati.
+    <p>Previsioni su due benchmark industriali pubblici. Timestral e Chronos-2 non sono mai stati addestrati su questi dati:
+       li confrontiamo con un metodo statistico classico (ARIMA) e con i risultati delle gare.
        Le linee sono la previsione mediana, le bande l'intervallo in cui il modello si aspetta il valore reale 8 volte su 10.</p>
   </header>
 
@@ -148,7 +181,73 @@
     <div class="window-score" id="bdg2-window"></div>
     <div class="chart" id="bdg2-chart"></div>
   </section>
+
+  <section id="ai">
+    <h2>AI powered</h2>
+    <p class="lead">Timestral produce i numeri; un agente AI può ragionarci sopra e raccontarli.
+      Quattro modi per estendere la demo, dal più semplice al più ambizioso. Non sono attivi in questa pagina.</p>
+    <div class="ideas">
+      <details>
+        <summary>
+          <h3>Spiega questa previsione</h3>
+          <p>Tre o quattro frasi in italiano sotto ogni grafico, per chi non legge le serie temporali.</p>
+          <span class="more">Come si amplia con un agente →</span>
+        </summary>
+        <div class="body">
+          <p>Dalla previsione si calcolano i fatti salienti: picchi e orari critici, larghezza della banda, scostamento dalla settimana tipo.
+            Un LLM li trasforma in un testo, per esempio: "domani il consumo seguirà il ciclo feriale con un picco di circa 250 kWh alle 10; domenica l'incertezza è alta".</p>
+          <p><strong>Ampliamento:</strong> un report automatico ogni mattina per ciascun reparto o impianto, inviato al responsabile.
+            L'LLM scrive solo a partire da numeri già calcolati, quindi non può inventarli.</p>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <h3>Scenari "what-if"</h3>
+          <p>"Cosa succede se domani fa 5 °C in più?" "E se sposto il turno di saldatura a giovedì?"</p>
+          <span class="more">Come si amplia con un agente →</span>
+        </summary>
+        <div class="body">
+          <ol>
+            <li>L'agente traduce la domanda in una modifica delle covariate future: temperatura, piano turni, calendario.</li>
+            <li>Rilancia Timestral con lo scenario modificato, in meno di un secondo su CPU.</li>
+            <li>Confronta lo scenario con la previsione base e spiega cosa cambia: picco, energia totale, rischio di superare la potenza contrattuale.</li>
+          </ol>
+          <p><strong>Ampliamento:</strong> collegato al piano di produzione del cantiere, aiuta a spostare le lavorazioni energivore e a dimensionare i contratti di fornitura.</p>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <h3>Agente per le anomalie</h3>
+          <p>Scorre tutte le macchine, segnala quelle che escono dalla banda prevista e prova a capire perché.</p>
+          <span class="more">Come si amplia con un agente →</span>
+        </summary>
+        <div class="body">
+          <ol>
+            <li>Timestral prevede ogni macchina, o ogni turbina: un valore reale fuori dalla banda è un segnale.</li>
+            <li>L'agente confronta la macchina con quelle simili e controlla le altre variabili. Sull'eolico: angolo delle pale, temperature, velocità del vento.</li>
+            <li>Propone un'ipotesi, per esempio: "turbina 67 a zero con vento a 8 m/s e pale a 90°: probabile fermo per sicurezza".</li>
+          </ol>
+          <p><strong>Ampliamento:</strong> l'agente cerca casi simili nello storico delle manutenzioni, nei log e nei manuali, e apre un ticket con le evidenze allegate.
+            È lo scenario che Mistral stessa usa per presentare Timestral.</p>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <h3>Chat sui dati di produzione</h3>
+          <p>"Quale reparto consumerà di più domani?" "Quali macchine sono andate peggio questa settimana?"</p>
+          <span class="more">Come si amplia con un agente →</span>
+        </summary>
+        <div class="body">
+          <p>L'agente ha a disposizione degli strumenti: leggere le serie, lanciare previsioni, calcolare metriche.
+            Sceglie da solo quali usare e risponde con numeri e grafici.</p>
+          <p><strong>Ampliamento:</strong> integrazione con i sistemi del cliente (MES, ERP, SCADA).
+            Con un LLM Mistral in locale tutto resta nell'infrastruttura del cliente, senza che i dati escano dall'azienda.</p>
+        </div>
+      </details>
+    </div>
+  </section>
 </main>
+<div id="tooltip" role="tooltip"></div>
 
 <script src="data.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
@@ -160,14 +259,37 @@ const LABELS = {
   "Chronos-2": "Chronos-2",
   "Persistence": "Persistenza (ultimo valore)",
   "Seasonal naive": "Ripeti settimana precedente",
+  "AutoARIMA": "AutoARIMA",
 };
+
+const INFO = {
+  "Vincitore KDD Cup 2022 (HIK)":
+    "<strong>Come è stato ottenuto</strong>Team HIK (Hikvision e Università di Zhejiang), primo nella fase finale tra oltre 2.400 team. " +
+    "È un ensemble addestrato sui 245 giorni di dati della gara. Da una parte una rete neurale spazio-temporale: GRU encoder-decoder che collega ogni turbina " +
+    "alle vicine tramite grafi, per vicinanza fisica e per andamento simile del vento. Dall'altra modelli LightGBM costruiti per gruppi di turbine e fasce dell'orizzonte. " +
+    "Un modulo di ensemble combina le due previsioni. Usa tutte le variabili SCADA: vento, direzione, temperature, angolo delle pale. " +
+    "Timestral e Chronos-2 invece vedono solo lo storico della potenza, senza addestramento.",
+  "Baseline ufficiale GRU":
+    "<strong>Come è stata ottenuta</strong>La baseline fornita da Baidu a tutti i partecipanti: una rete GRU a 2 strati per ciascuna delle 134 turbine, " +
+    "addestrata su 153 giorni e validata su 16. In input l'ultimo giorno (144 misure) di tutte le 10 variabili SCADA, in output le 48 ore successive.",
+  "AutoARIMA":
+    "<strong>Metodo statistico classico</strong>Per ogni serie e ogni finestra viene stimato da zero un modello ARIMA, scegliendo i parametri in automatico. " +
+    "Eolico: stimato sugli ultimi 3 giorni di potenza. Consumi: stimato sulle ultime 4 settimane, con i cicli giornaliero e settimanale passati come termini di Fourier. " +
+    "Un ARIMA stagionale classico con periodo di 24 ore richiede 20-30 secondi per ogni serie, troppo per migliaia di previsioni. " +
+    "I buchi nei dati vengono interpolati.",
+};
+const infoButton = (name) => INFO[name.replace(" + temp", "")]
+  ? `<button class="info" type="button" data-info="${name.replace(" + temp", "")}" aria-label="Dettagli su ${name}">i</button>` : "";
 const label = (name) => {
   const withTemp = name.endsWith(" + temp");
   const base = LABELS[name.replace(" + temp", "")] || name;
   return withTemp ? `${base} + temperatura` : base;
 };
 const colorVar = (name) =>
-  name.startsWith("Timestral") ? "--timestral" : name.startsWith("Chronos") ? "--chronos" : "--baseline";
+  name.startsWith("Timestral") ? "--timestral" : name.startsWith("Chronos") ? "--chronos"
+    : name.startsWith("AutoARIMA") ? "--arima" : "--baseline";
+// Bands only for the two foundation models: a third band would bury the lines.
+const hasBand = (name) => name.startsWith("Timestral") || name.startsWith("Chronos");
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const fmt = (x, d = 2) => x.toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -182,20 +304,24 @@ function sdwpfTable() {
   document.getElementById("sdwpf-metrics").innerHTML =
     `<tr><th>Modello</th><th>Punteggio gara</th><th>MAE (MW)</th><th>RMSE (MW)</th><th>Tempo per caso</th></tr>` +
     rows.map((r) => r.reference
-      ? `<tr class="reference"><td>${r.model}</td><td>${fmt(r.score)}</td><td></td><td></td><td></td></tr>`
-      : `<tr class="${r.model === best ? "best" : ""}"><td>${swatch(r.model)}${label(r.model)}</td><td>${fmt(r.score)}</td>` +
+      ? `<tr class="reference"><td>${r.model}${infoButton(r.model)}</td><td>${fmt(r.score)}</td><td></td><td></td><td></td></tr>`
+      : `<tr class="${r.model === best ? "best" : ""}"><td>${swatch(r.model)}${label(r.model)}${infoButton(r.model)}</td>` +
+        `<td>${fmt(r.score)}${r.cases < DATA.sdwpf.nCases ? "*" : ""}</td>` +
         `<td>${fmt(r.mae)}</td><td>${fmt(r.rmse)}</td><td>${fmt(r.seconds, 1)} s</td></tr>`).join("");
-  const n = DATA.sdwpf.nCases;
+  const n = DATA.sdwpf.nCases, same = DATA.sdwpf.sameCases;
   document.getElementById("sdwpf-note").textContent =
     `Punteggio ufficiale della gara: media di MAE e RMSE sommati sulle 134 turbine, più basso è meglio. ` +
-    (n < 142 ? `Calcolato su ${n} dei 142 casi: risultato preliminare.` : `Calcolato su tutti i 142 casi.`);
+    (n < 142 ? `Calcolato su ${n} dei 142 casi: risultato preliminare. ` : `Calcolato su tutti i 142 casi. `) +
+    `* AutoARIMA solo su ${DATA.sdwpf.arimaCases} casi distribuiti sui 142, per tenere il calcolo sotto i 10 minuti. ` +
+    `Sugli stessi casi: Timestral ${fmt(same["Timestral-209M"])}, Chronos-2 ${fmt(same["Chronos-2"])}, ` +
+    `AutoARIMA ${fmt(same["AutoARIMA"])}, persistenza ${fmt(same["Persistence"])}.`;
 }
 
 function bdg2Table() {
   const rows = DATA.bdg2.metrics;
   document.getElementById("bdg2-metrics").innerHTML =
     `<tr><th>Modello</th><th>MAE (kWh)</th><th>Riduzione errore</th><th>Copertura banda</th><th>Tempo totale</th></tr>` +
-    rows.map((r, i) => `<tr class="${i === 0 ? "best" : ""}"><td>${swatch(r.model)}${label(r.model)}</td>` +
+    rows.map((r, i) => `<tr class="${i === 0 ? "best" : ""}"><td>${swatch(r.model)}${label(r.model)}${infoButton(r.model)}</td>` +
       `<td>${fmt(r.mae)}</td><td>${r.skill > 0 ? "−" + fmt(r.skill, 1) + "%" : "—"}</td>` +
       `<td>${r.model === "Seasonal naive" ? "—" : fmt(r.coverage, 0) + "%"}</td><td>${fmt(r.seconds, 1)} s</td></tr>`).join("");
 }
@@ -206,7 +332,7 @@ function forecastTraces(x, forecasts, unit, bands) {
   for (const [name, f] of Object.entries(forecasts)) {
     const color = css(colorVar(name));
     const isBaseline = colorVar(name) === "--baseline";
-    if (bands && !isBaseline) {
+    if (bands && hasBand(name)) {
       traces.push({ x, y: f.hi, mode: "lines", line: { width: 0 }, hoverinfo: "skip", showlegend: false, legendgroup: name });
       traces.push({ x, y: f.lo, mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: color + "1f",
                     hoverinfo: "skip", showlegend: false, legendgroup: name });
@@ -299,6 +425,33 @@ function drawBdg2() {
   drawChart("bdg2-chart", xHist, w.history, xFut, w.actual, w.forecasts, "kWh", "", stamp(0));
   windowLine(document.getElementById("bdg2-window"), w.actual, w.forecasts, "kWh");
 }
+
+// ---------- info popover: hover on desktop, tap on touch, focus via keyboard ----------
+const tooltip = document.getElementById("tooltip");
+let pinned = null;
+
+function showTip(btn) {
+  tooltip.innerHTML = INFO[btn.dataset.info];
+  tooltip.style.display = "block";
+  const r = btn.getBoundingClientRect();
+  const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+  const left = Math.min(Math.max(16, r.left - 12), window.innerWidth - w - 16);
+  const top = r.bottom + 8 + h < window.innerHeight ? r.bottom + 8 : r.top - h - 8;
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${Math.max(8, top)}px`;
+}
+const hideTip = () => { tooltip.style.display = "none"; pinned = null; };
+
+document.addEventListener("mouseover", (e) => { const b = e.target.closest(".info"); if (b && !pinned) showTip(b); });
+document.addEventListener("mouseout", (e) => { if (e.target.closest(".info") && !pinned) tooltip.style.display = "none"; });
+document.addEventListener("focusin", (e) => { const b = e.target.closest(".info"); if (b) showTip(b); });
+document.addEventListener("focusout", (e) => { if (e.target.closest(".info") && !pinned) tooltip.style.display = "none"; });
+document.addEventListener("click", (e) => {
+  const b = e.target.closest(".info");
+  if (b && pinned !== b) { showTip(b); pinned = b; } else if (!tooltip.contains(e.target)) hideTip();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideTip(); });
+window.addEventListener("scroll", () => { if (tooltip.style.display === "block") hideTip(); }, { passive: true });
 
 // ---------- init ----------
 function init() {

@@ -16,6 +16,10 @@
 | Parco eolico, 134 turbine, 142 casi della KDD Cup 2022 (punteggio, più basso è meglio) | **46,98** | 49,25 | Vincitore della gara 44,92 · baseline ufficiale 47,85 |
 | Consumi di 14 edifici industriali: riduzione dell'errore rispetto a "ripeti la settimana prima" | **−46%** | −41% | 0% |
 
+Un metodo statistico classico (ARIMA) resta nettamente indietro:
+- sui consumi riduce l'errore dell'11%, contro il 46% di Timestral;
+- sull'eolico fa 57,5 contro 49,8, misurato sugli stessi 20 casi.
+
 ## Fine-tuning
 
 - **Timestral:** solo tramite Mistral Forge, una piattaforma enterprise a pagamento.

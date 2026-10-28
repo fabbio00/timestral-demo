@@ -82,6 +82,64 @@ class SeasonalNaive:
         return np.repeat(point[..., None], len(QUANTILES), axis=-1)
 
 
+class AutoARIMAModel:
+    """Classical benchmark: one AutoARIMA fitted per series on the recent history.
+
+    Long seasonal periods (24 or 168 hourly steps) make seasonal ARIMA's state
+    space huge and each fit takes tens of seconds, so seasonality enters as
+    Fourier terms on a non-seasonal ARIMA (dynamic harmonic regression).
+    Gaps are linearly interpolated (ARIMA cannot skip them) and the quantiles are
+    read off the 20/40/60/80% prediction intervals around the mean.
+    """
+
+    name = "AutoARIMA"
+
+    def __init__(self, fit_last: int | None = None, fourier: tuple[tuple[int, int], ...] = ()):
+        from statsforecast.models import AutoARIMA
+
+        self.fit_last, self.fourier = fit_last, fourier
+        self.model = AutoARIMA(season_length=1)
+
+    def _fourier_terms(self, length):
+        t = np.arange(length)
+        terms = [f(2 * np.pi * k * t / period) for period, K in self.fourier for k in range(1, K + 1) for f in (np.sin, np.cos)]
+        return np.array(terms).reshape(-1, length)
+
+    def predict(self, context, horizon, known_covariates=None):
+        from statsforecast import StatsForecast
+
+        context = np.asarray(context, dtype=np.float64)
+        start = 0 if self.fit_last is None else context.shape[1] - self.fit_last
+        frames, futures = [], []
+        T = context.shape[1]
+        fourier = self._fourier_terms(T + horizon)
+        for i, series in enumerate(context):
+            y = pd.Series(series[start:]).interpolate(limit_direction="both").fillna(0).values
+            frame = pd.DataFrame({"unique_id": i, "ds": np.arange(len(y)), "y": y})
+            future = pd.DataFrame({"unique_id": i, "ds": np.arange(len(y), len(y) + horizon)})
+            cov = fourier
+            if known_covariates is not None:
+                cov = np.vstack([fourier, np.asarray(known_covariates[i], dtype=np.float64)])
+            for j, row in enumerate(cov):
+                frame[f"x{j}"] = row[start:T]
+                future[f"x{j}"] = row[T:]
+            frames.append(frame)
+            futures.append(future)
+        x_future = pd.concat(futures) if len(cov) else None
+        sf = StatsForecast(models=[self.model], freq=1, n_jobs=-1)
+        levels = [20, 40, 60, 80]
+        fc = sf.forecast(df=pd.concat(frames), h=horizon, level=levels, X_df=x_future).sort_values(["unique_id", "ds"])
+
+        def column(q):
+            if q == 0.5:
+                return "AutoARIMA"
+            level = round(abs(1 - 2 * q) * 100)
+            return f"AutoARIMA-{'lo' if q < 0.5 else 'hi'}-{level}"
+
+        out = np.stack([fc[column(q)].values.reshape(len(context), horizon) for q in QUANTILES], axis=-1)
+        return out
+
+
 class Persistence:
     """Last valid observation carried forward: the simplest operational baseline."""
 

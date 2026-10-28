@@ -4,6 +4,9 @@ Each case gives 14 days of 10-min history for 134 turbines; the task is the
 next 48 h of active power. Models see only each turbine's own power history
 (no weather), zero-shot. Reference scores from the competition: winner 44.92,
 GRU baseline 47.85 (lower is better).
+
+Forecasts for the page's showcase cases are cached for the frontend export;
+--showcase-only refreshes just that cache and leaves the metrics untouched.
 """
 
 import argparse
@@ -11,7 +14,8 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from demo.kddcup import N_CASES, OUTPUT_LEN, clean_context, load_case, score_case
+from demo import cache
+from demo.kddcup import N_CASES, OUTPUT_LEN, SHOWCASE_CASES, clean_context, load_case, score_case
 from demo.models import QUANTILES, Chronos2Model, Persistence, TimestralModel, timed_predict
 from demo.paths import RESULTS_DIR
 
@@ -19,21 +23,26 @@ from demo.paths import RESULTS_DIR
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cases", type=int, default=10, help=f"number of test cases (max {N_CASES})")
+    parser.add_argument("--showcase-only", action="store_true", help="only refresh the cached showcase forecasts")
     args = parser.parse_args()
 
     models = [Persistence(), TimestralModel(), Chronos2Model()]
-    cases = np.linspace(1, N_CASES, args.cases).round().astype(int)
+    cases = SHOWCASE_CASES if args.showcase_only else np.linspace(1, N_CASES, args.cases).round().astype(int)
     rows = []
     for idx in cases:
         inputs, truths = load_case(idx)
         context = np.stack([clean_context(df) for df in inputs])
         for model in models:
             q, seconds = timed_predict(model, context, OUTPUT_LEN)
+            if idx in SHOWCASE_CASES:
+                cache.save("sdwpf", model.name, [str(idx)], q[None])
             median = np.clip(q[..., QUANTILES.index(0.5)], 0, None)
             case_mae, case_rmse = score_case(median, truths)
             rows.append({"case": idx, "model": model.name, "MAE": case_mae, "RMSE": case_rmse, "seconds": seconds})
         print(pd.DataFrame(rows[-len(models):]).round(2).to_string(index=False, header=idx == cases[0]))
 
+    if args.showcase_only:
+        return
     df = pd.DataFrame(rows)
     RESULTS_DIR.mkdir(exist_ok=True)
     df.to_csv(RESULTS_DIR / "sdwpf_smoke.csv", index=False)

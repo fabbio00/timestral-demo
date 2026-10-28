@@ -15,6 +15,17 @@ TEST_DIR = RAW_DIR / "sdwpf" / "final_phase_test"
 N_TURBINES = 134
 OUTPUT_LEN = 288  # 48 h at 10 min
 N_CASES = 142
+# AutoARIMA only runs on 20 evenly spaced cases (19k fits for all 142 take ~50 min);
+# the page plots a subset of those so every model appears in each chart.
+ARIMA_CASES = np.linspace(1, N_CASES, 20).round().astype(int)
+SHOWCASE_CASES = ARIMA_CASES[::4]
+
+
+def arima():
+    """AutoARIMA on the last 3 days: wind's daily cycle is weak, longer fits cost 10x more."""
+    from demo.models import AutoARIMAModel
+
+    return AutoARIMAModel(fit_last=432)
 
 
 def invalid_mask(df: pd.DataFrame) -> np.ndarray:

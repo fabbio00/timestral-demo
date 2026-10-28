@@ -20,6 +20,16 @@ SEASON = 168
 ORIGINS = pd.date_range("2017-02-06", "2017-12-04", freq="5W-MON")
 
 
+def arima():
+    """AutoARIMA on the last 4 weeks, daily and weekly cycles as 10 Fourier pairs each.
+
+    Fewer terms lose the sharp weekend shutdowns and fall behind seasonal naive.
+    """
+    from demo.models import AutoARIMAModel
+
+    return AutoARIMAModel(fit_last=672, fourier=((24, 10), (168, 10)))
+
+
 def load():
     raw = RAW_DIR / "bdg2"
     meta = pd.read_csv(raw / "metadata_metadata.csv")
@@ -36,6 +46,10 @@ def load():
     temp = weather.pivot_table(index="timestamp", columns="site_id", values="airTemperature").reindex(elec.index)
     temp = temp.interpolate(limit_direction="both")
     return elec, temp, meta.set_index("building_id")
+
+
+def window_key(building, origin) -> str:
+    return f"{building}|{origin.isoformat()}"
 
 
 def windows(elec, temp, meta, origins=ORIGINS):

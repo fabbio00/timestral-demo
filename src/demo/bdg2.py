@@ -21,13 +21,15 @@ ORIGINS = pd.date_range("2017-02-06", "2017-12-04", freq="5W-MON")
 
 
 def arima():
-    """AutoARIMA on the last 4 weeks, daily and weekly cycles as 10 Fourier pairs each.
+    """AutoARIMA on the last 4 weeks, daily and weekly cycles as 6 Fourier pairs each.
 
-    Fewer terms lose the sharp weekend shutdowns and fall behind seasonal naive.
+    The pair count was picked on 24 validation windows from Jul-Dec 2016, disjoint
+    from the 2017 test origins: 3/2 pairs 16.23 MAE, 6/6 15.09, 10/10 15.67,
+    10/20 15.09 (seasonal naive 14.82).
     """
     from demo.models import AutoARIMAModel
 
-    return AutoARIMAModel(fit_last=672, fourier=((24, 10), (168, 10)))
+    return AutoARIMAModel(fit_last=672, fourier=((24, 6), (168, 6)))
 
 
 def load():

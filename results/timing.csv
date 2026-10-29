@@ -1,0 +1,9 @@
+model,device,workload,seconds
+Timestral-209M,CPU,1 turbina,0.15435116703156382
+Timestral-209M,CPU,134 turbine,9.89467120799236
+Chronos-2,GPU (MPS),1 turbina,0.02994575002230704
+Chronos-2,GPU (MPS),134 turbine,3.536222790949978
+Chronos-2,CPU,1 turbina,0.07616166700609028
+Chronos-2,CPU,134 turbine,5.130699708941393
+AutoARIMA,"CPU, 10 processi",1 turbina,0.05192470899783075
+AutoARIMA,"CPU, 10 processi",134 turbine,12.079187333001755

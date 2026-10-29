@@ -14,12 +14,13 @@
 | Test pubblico | Timestral | Chronos-2 | ARIMA | Riferimento |
 | --- | --- | --- | --- | --- |
 | Parco eolico, 142 casi della KDD Cup 2022 (punteggio della gara, più basso è meglio) | **47,5** | 49,9 | 57,9 ¹ | vincitore 44,9 · baseline ufficiale 47,9 |
-| Consumi di 14 edifici industriali: errore in meno rispetto a "ripeti la settimana prima" | **−46%** | −41% | −2% | 0% |
+| Consumi di 14 edifici industriali, 109 previsioni: scarto medio dal consumo reale, in % del consumo medio (più basso è meglio) | **9,9%** | 10,8% | 18,0% | ripeti la settimana prima 18,4% |
 
 ¹ Misurato su 20 casi su 142, per contenere i tempi di calcolo. Sugli stessi casi Timestral fa 50,4.
 
 - Il vincitore della gara aveva addestrato i suoi modelli su questi dati e usava anche il vento. Timestral vede solo la produzione passata.
-- Il risultato sui consumi usa la temperatura come informazione aggiuntiva. Senza, Timestral riduce l'errore del 36%.
+- Sui consumi l'errore è misurato sulle 48 ore reali che il modello non ha visto. Il consumo medio è 77 kWh all'ora, quindi 9,9% vuol dire sbagliare in media di circa 7,7 kWh. Rispetto a "ripeti la settimana prima" è il 46% di errore in meno.
+- Il risultato sui consumi usa la temperatura come informazione aggiuntiva. Senza, l'errore di Timestral sale all'11,8%.
 
 ## Fine-tuning
 

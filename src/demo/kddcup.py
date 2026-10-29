@@ -28,6 +28,14 @@ def arima():
     return AutoARIMAModel(fit_last=432)
 
 
+def case_row(idx: int, model: str, median: np.ndarray, truths, seconds: float) -> dict:
+    """One results row: official score, strict score and whether the official checks pass."""
+    median = np.clip(median, 0, None)
+    official, strict = score_case(median, truths), score_case(median, truths, skip_zero=False)
+    return {"case": int(idx), "model": model, "MAE": official[0], "RMSE": official[1],
+            "MAE_strict": strict[0], "RMSE_strict": strict[1], "valid": passes_official_checks(median), "seconds": seconds}
+
+
 def invalid_mask(df: pd.DataFrame) -> np.ndarray:
     """Points the official scorer drops: missing, curtailed or physically impossible readings."""
     return (
@@ -48,19 +56,50 @@ def load_case(idx: int):
 
 
 def clean_context(df: pd.DataFrame) -> np.ndarray:
-    """Patv history with invalid points set to NaN, so models treat them as missing."""
-    patv = df.Patv.values.astype(np.float32).copy()
-    patv[invalid_mask(df)] = np.nan
+    """Patv history cleaned as the SDWPF authors suggest (Scientific Data 2024).
+
+    Slightly negative power is an idle turbine drawing auxiliary power in low wind:
+    it becomes 0, not a gap, or the models would never see calm periods. Points are
+    unknown (NaN) only when missing, at or below zero with wind above 2.5 m/s, with
+    blades pitched past 89 degrees, or with impossible angles. The scorer still uses
+    the stricter official invalid_mask.
+    """
+    patv = np.clip(df.Patv.values.astype(np.float32), 0, None)
+    unknown = (
+        df.isna().any(axis=1)
+        | ((df.Patv <= 0) & (df.Wspd > 2.5))
+        | (df.Pab1 > 89) | (df.Pab2 > 89) | (df.Pab3 > 89)
+        | (df.Wdir < -180) | (df.Wdir > 180)
+        | (df.Ndir < -720) | (df.Ndir > 720)
+    ).values
+    patv[unknown] = np.nan
     return patv
 
 
-def score_case(pred: np.ndarray, truth_frames) -> tuple[float, float]:
-    """pred: (134, 288) in kW. Returns summed MAE and RMSE in MW for one test case."""
+def passes_official_checks(pred: np.ndarray) -> bool:
+    """The official submission checks: at least 90% of turbines with a non-zero forecast
+    and at least 10% with a non-constant one. Constant forecasts (persistence) fail."""
+    def constant(p):
+        return p.min() == p.max() or (p.std() <= 0.1 and len(np.unique(p)) / p.size < 0.1)
+
+    nonzero = np.mean([p.any() for p in pred])
+    varying = np.mean([not constant(p) for p in pred])
+    return bool(nonzero >= 0.9 and varying >= 0.1)
+
+
+def score_case(pred: np.ndarray, truth_frames, skip_zero: bool = True) -> tuple[float, float]:
+    """pred: (134, 288) in kW. Returns summed MAE and RMSE in MW for one test case.
+
+    skip_zero=True is the official per-turbine rule: a turbine whose valid predictions or
+    targets are all zero is skipped, not scored. The official submission checks keep
+    that from being gamed with zero forecasts; for forecasts that fail those checks,
+    skip_zero=False scores every turbine with a non-zero target instead.
+    """
     maes, rmses = [], []
     for p, df in zip(pred, truth_frames):
         gt = df.Patv.fillna(0).values[:OUTPUT_LEN]
         keep = ~invalid_mask(df)[:OUTPUT_LEN]
-        if not keep.any():
+        if not np.any(gt[keep]) or (skip_zero and not np.any(p[keep])):
             continue
         err = (p[keep] - gt[keep]) / 1000
         maes.append(np.mean(np.abs(err)))

@@ -5,8 +5,8 @@ so all 142 cases (19k fits) would take ~50 min; the 20 evenly spaced cases in
 kddcup.ARIMA_CASES keep the run under 10 min. The page compares ARIMA with the
 other models on these same cases, read from results/sdwpf_smoke.csv.
 
-Forecasts for the page's showcase cases are cached for the frontend export;
---showcase-only refreshes just that cache and leaves the metrics untouched.
+Forecasts of every case run are cached for rescoring and the frontend export;
+--showcase-only refreshes just the page's cases and leaves the metrics untouched.
 """
 
 import argparse
@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 from demo import cache
-from demo.kddcup import ARIMA_CASES, OUTPUT_LEN, SHOWCASE_CASES, arima, clean_context, load_case, score_case
+from demo.kddcup import ARIMA_CASES, OUTPUT_LEN, SHOWCASE_CASES, arima, case_row, clean_context, load_case
 from demo.models import QUANTILES
 from demo.paths import RESULTS_DIR
 
@@ -30,19 +30,18 @@ def main():
     args = parser.parse_args()
 
     model = arima()
-    rows = []
+    rows, forecasts = [], {}
     for idx in SHOWCASE_CASES if args.showcase_only else ARIMA_CASES:
         inputs, truths = load_case(idx)
         context = np.stack([clean_context(df) for df in inputs])
         start = time.perf_counter()
         q = model.predict(context, OUTPUT_LEN)
         seconds = time.perf_counter() - start
-        if idx in SHOWCASE_CASES:
-            cache.save("sdwpf", model.name, [str(idx)], q[None])
-        case_mae, case_rmse = score_case(np.clip(q[..., QUANTILES.index(0.5)], 0, None), truths)
-        rows.append({"case": idx, "model": model.name, "MAE": case_mae, "RMSE": case_rmse, "seconds": seconds})
+        forecasts[str(idx)] = q
+        rows.append(case_row(idx, model.name, q[..., QUANTILES.index(0.5)], truths, seconds))
         print(rows[-1], flush=True)
 
+    cache.save("sdwpf", model.name, list(forecasts), np.stack(list(forecasts.values())))
     if args.showcase_only:
         return
     df = pd.DataFrame(rows)

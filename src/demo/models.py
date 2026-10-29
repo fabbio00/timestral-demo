@@ -76,7 +76,9 @@ class SeasonalNaive:
         self.season = season
 
     def predict(self, context, horizon, known_covariates=None):
-        context = np.asarray(context, dtype=np.float32)
+        # Gaps in the last season would leave holes in the forecast and shrink the points
+        # it is scored on, so they are interpolated first.
+        context = pd.DataFrame(np.asarray(context, dtype=np.float32).T).interpolate(limit_direction="both").fillna(0).T.values
         reps = int(np.ceil(horizon / self.season))
         point = np.tile(context[:, -self.season :], reps)[:, :horizon]
         return np.repeat(point[..., None], len(QUANTILES), axis=-1)

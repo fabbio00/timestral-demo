@@ -8,7 +8,7 @@ senza essere addestrati su questi dati.
 
 ## Documenti
 
-- [Sintesi per il manager](docs/sintesi-manager.md): licenze, fine-tuning, risultati e decisioni da prendere.
+- [Sintesi per il progetto](docs/sintesi.md): licenze, fine-tuning, risultati e decisioni da prendere.
 - [Cosa sanno fare i modelli](docs/modelli.md): input accettati, come lavorano i dati, output e limiti.
 
 ## I due benchmark
@@ -19,7 +19,7 @@ senza essere addestrati su questi dati.
 | Cosa si prevede | potenza di 134 turbine, 48 ore | consumo elettrico di 14 edifici, 48 ore |
 | Input | 14 giorni di potenza, ogni 10 minuti | ~6 mesi di consumi orari, con o senza temperatura |
 | Test | i 142 casi ufficiali della fase finale | 109 finestre da 9 date del 2017 |
-| Punteggio | quello ufficiale della gara (MAE + RMSE in MW) | errore medio in kWh, copertura delle bande |
+| Punteggio | quello ufficiale della gara (MAE + RMSE in MW) | errore medio sul consumo reale, in % del consumo medio e in kWh; copertura delle bande |
 | Confronto esterno | vincitore 44,92 · baseline GRU 47,85 | nessuno: la gara chiedeva un compito diverso |
 | Licenza | CC BY 4.0 | CC BY-SA 4.0 |
 
@@ -80,6 +80,7 @@ A ogni push su `main` che tocca `frontend/`, il workflow
 - Timestral su Mac usa la CPU: la sua normalizzazione richiede float64, che la GPU Apple (MPS) non supporta. Chronos-2 usa MPS e dà le stesse previsioni che su CPU.
 
 **Eolico**
+- I grafici mostrano 5 casi (presi tra i 20 di AutoARIMA, così ci sono tutti i modelli) e 5 turbine a intervalli regolari, per contenere il peso di `frontend/data.js`. Il punteggio conta tutti i 142 casi e le 134 turbine.
 - Pulizia dello storico come indicano gli autori del dataset:
   - la potenza leggermente negativa (turbina ferma per vento debole) diventa 0;
   - sono sconosciuti, e arrivano ai modelli come mancanti, i punti con pale oltre 89°, quelli a zero con vento sopra 2,5 m/s, gli angoli impossibili e i dati mancanti.
@@ -90,6 +91,7 @@ A ogni push su `main` che tocca `frontend/`, il workflow
 - Edifici industriali con almeno il 95% delle ore misurate, esclusi i 4 siti presenti nel corpus pubblico di addestramento `Salesforce/GiftEvalPretrain`.
 - Escluse le finestre con il contatore spento per più di metà delle ore. Il filtro guarda anche le 48 ore da prevedere ed è uguale per tutti i modelli.
 - La temperatura futura è quella misurata, cioè una previsione meteo perfetta: in produzione il guadagno sarà più basso.
+- L'errore principale è la WAPE: MAE sulle 48 ore tenute fuori diviso il consumo medio di quelle ore (77 kWh/h). "Ripeti la settimana prima" è un modello di confronto: anche il suo errore è misurato sul reale.
 
 **AutoARIMA**
 - Un ARIMA stagionale con periodo di 24 ore costa 20-30 secondi per serie. Per questo si usa un ARIMA non stagionale con i cicli come termini di Fourier: 6 coppie giornaliere e 6 settimanali, scelte su finestre di validazione del 2016.

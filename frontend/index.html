@@ -118,6 +118,7 @@
   .rank-bar { height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
   .rank-value { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 600;
                 font-variant-numeric: tabular-nums; padding-left: 8px; white-space: nowrap; }
+  .rank-detail { font-weight: 400; color: var(--muted); }
   .rank-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
   /* ---------- tables ---------- */
@@ -263,7 +264,8 @@
     </details>
 
     <h3 class="block">Previsione contro realtà</h3>
-    <p class="block-sub">Scegli un caso di test e una turbina, oppure l'intero parco. La zona colorata è il periodo previsto: lì la linea nera è il valore reale che i modelli non hanno visto.</p>
+    <p class="block-sub">Scegli un caso di test e una turbina, oppure l'intero parco. La zona colorata è il periodo previsto: lì la linea nera è il valore reale che i modelli non hanno visto.
+      Per contenere il peso della pagina ne mostriamo un campione: 5 casi e 5 turbine a intervalli regolari. La classifica invece conta tutti i 142 casi e tutte le 134 turbine.</p>
     <div class="controls">
       <label>Caso di test <select id="sdwpf-case"></select></label>
       <label>Serie <select id="sdwpf-series"></select></label>
@@ -286,7 +288,8 @@
     </dl>
 
     <h3 class="block">Classifica <button class="info" type="button" data-info="mae" aria-label="Cos'è l'errore medio">i</button></h3>
-    <p class="block-sub">Errore medio per ora, in kWh, con la temperatura come informazione aggiuntiva: più è basso, meglio è.</p>
+    <p class="block-sub">Di quanto la previsione si scosta, ora per ora, dal consumo reale delle 48 ore che il modello non ha visto.
+      In percentuale del consumo medio degli edifici (<span id="bdg2-mean"></span>), accanto in kWh. Previsioni con la temperatura: più è basso, meglio è.</p>
     <div class="ranking" id="bdg2-ranking"></div>
     <details class="more-table">
       <summary>Tabella completa: con e senza temperatura</summary>
@@ -521,10 +524,15 @@ const INFO = {
     Per evitare che qualcuno ne approfitti, scarta le consegne con previsioni costanti o con troppe turbine a zero.</p>
     <p>Le previsioni di questo modello sarebbero state scartate (ultimo valore: ${sd.rejected["Persistence"]} casi su ${sd.nCases}; AutoARIMA: ${sd.rejected["AutoARIMA"]} su ${sd.arimaCases}),
     quindi qui contiamo tutte le turbine. Timestral e Chronos-2 non sono mai stati scartati.</p>`,
-  mae: `<strong>Errore medio (MAE)</strong><p>Di quanti kWh, in media, la previsione di ogni ora si discosta dal consumo reale. Calcolato su tutte le ${bd.windows.length} previsioni da 48 ore.</p>`,
+  mae: `<strong>Errore medio</strong><p>Per ogni previsione da 48 ore teniamo da parte i consumi reali di quelle ore: il modello non li vede, servono solo per il confronto.
+    L'errore è lo scarto medio, ora per ora, tra previsione e consumo reale, su tutte le ${bd.windows.length} previsioni.</p>
+    <p>In kWh è lo scarto assoluto (MAE). In percentuale è lo stesso scarto diviso il consumo medio, ${fmt(bd.meanKWh, 0)} kWh all'ora: 10% vuol dire sbagliare in media di un decimo di quanto si consuma.
+    Gli edifici grandi pesano di più, perché i loro scarti in kWh sono più grandi.</p>`,
+  naive: `<strong>Un modello di confronto, non il dato reale</strong><p>"Ripeti la settimana prima" prevede che ogni ora sia uguale alla stessa ora di 7 giorni prima. Anche il suo errore è misurato sui consumi reali.</p>
+    <p>Serve come soglia minima: un modello che non lo batte non aggiunge niente.</p>`,
   temperature: `<strong>Cosa significa "con temperatura"</strong><p>Oltre allo storico dei consumi, il modello riceve la temperatura esterna prevista per le 48 ore da prevedere: un'informazione nota in anticipo, come un piano di produzione.</p>
     <p>Qui usiamo la temperatura poi misurata, cioè una previsione meteo perfetta: in produzione il guadagno sarebbe un po' più basso.</p>`,
-  reduction: `<strong>Riduzione dell'errore</strong><p>Quanto l'errore è più basso rispetto al metodo più semplice: ripetere la stessa ora della settimana precedente. −40% significa che si sbaglia il 40% in meno.</p>`,
+  reduction: `<strong>Riduzione dell'errore</strong><p>Quanto l'errore sul consumo reale è più basso di quello del metodo più semplice, ripetere la stessa ora della settimana precedente. −40% significa che si sbaglia il 40% in meno.</p>`,
   coverage: `<strong>Copertura della banda</strong><p>Ogni modello indica una banda in cui si aspetta il valore reale 8 volte su 10. La copertura è quante volte ci cade davvero: l'ideale è l'80%.</p>
     <p>Sotto l'80% il modello è troppo sicuro di sé; sopra, troppo prudente.</p>`,
   bands: `<strong>Bande di incertezza</strong><p>L'area colorata attorno a ogni previsione è l'intervallo in cui il modello si aspetta il valore reale 8 volte su 10.</p>`,
@@ -548,10 +556,10 @@ function ranking(el, rows, unit, digits = 2) {
     const name = r.reference
       ? `<span class="swatch ref"></span>${r.model}${infoBtn(REFERENCES[r.model], r.model)}`
       : `${swatch(r.model)}${r.label || MODELS[r.model].label}${infoBtn(r.model, r.model)}`;
-    const w = (100 * r.value / max) * 0.82;
+    const w = (100 * r.value / max) * (r.detail ? 0.58 : 0.82);  // leave room for the longer label on phones
     return `<div class="rank-row"><div class="rank-label ${r.reference ? "reference" : ""}" ${r === best ? 'style="font-weight:600"' : ""}>${name}</div>
       <div class="rank-track"><div class="rank-bar" style="width:${w}%;background:${color}"></div>
-      <span class="rank-value" style="left:${w}%">${fmt(r.value, digits)}${unit}${r.strict ? strictMark : ""}</span></div></div>`;
+      <span class="rank-value" style="left:${w}%">${fmt(r.value, digits)}${unit}${r.detail ? `<span class="rank-detail"> · ${r.detail}</span>` : ""}${r.strict ? strictMark : ""}</span></div></div>`;
   }).join("");
 }
 
@@ -573,21 +581,25 @@ function sdwpfTables() {
 function bdg2Tables() {
   const by = Object.fromEntries(bd.metrics.map((r) => [r.model, r]));
   const order = ["Timestral-209M", "Chronos-2", "AutoARIMA", "Seasonal naive"];
-  ranking(document.getElementById("bdg2-ranking"), order.map((m) => ({
-    model: m, value: (by[`${m} + temp`] || by[m]).mae,
-    label: m === "Seasonal naive" ? MODELS[m].label : undefined,
-  })), " kWh");
+  ranking(document.getElementById("bdg2-ranking"), order.map((m) => {
+    const r = by[`${m} + temp`] || by[m];
+    return { model: m, value: r.wape, detail: `${fmt(r.mae)} kWh`, label: m === "Seasonal naive" ? MODELS[m].label : undefined };
+  }), "%", 1);
+  document.getElementById("bdg2-mean").textContent = `${fmt(bd.meanKWh, 0)} kWh all'ora`;
+  const error = (r) => `${fmt(r.wape, 1)}% <span style="color:var(--muted)">· ${fmt(r.mae)} kWh</span>`;
   document.getElementById("bdg2-metrics").innerHTML =
     `<tr><th>Modello</th><th>Errore · solo storico${infoBtn("mae", "errore medio")}</th><th>Errore · con temperatura${infoBtn("temperature", "temperatura")}</th>` +
     `<th>Riduzione errore${infoBtn("reduction", "riduzione dell'errore")}</th><th>Copertura banda${infoBtn("coverage", "copertura")}</th></tr>` +
     order.map((m, i) => {
       const plain = by[m], temp = by[`${m} + temp`], shown = temp || plain;
-      return `<tr class="${i === 0 ? "best" : ""}"><td><span style="display:inline-flex;align-items:center;gap:8px">${swatch(m)}${MODELS[m].label}</span></td>
-        <td>${fmt(plain.mae)} kWh</td><td>${temp ? fmt(temp.mae) + " kWh" : "—"}</td>
+      const naive = m === "Seasonal naive";
+      return `<tr class="${i === 0 ? "best" : ""}"><td><span style="display:inline-flex;align-items:center;gap:8px">${swatch(m)}${MODELS[m].label}${naive ? infoBtn("naive", "modello di confronto") : ""}</span></td>
+        <td>${error(plain)}</td><td>${temp ? error(temp) : "—"}</td>
         <td>${shown.skill > 0 ? "−" + fmt(shown.skill, 0) + "%" : "riferimento"}</td>
-        <td>${m === "Seasonal naive" ? "—" : pct(shown.coverage)}</td></tr>`;
+        <td>${naive ? "—" : pct(shown.coverage)}</td></tr>`;
     }).join("") +
     `<tr><td colspan="5" style="white-space:normal;color:var(--muted);font-size:13px;text-align:left;border:0;padding-top:12px">
+      Tutti gli errori, compreso quello di "ripeti la settimana prima", sono misurati sui consumi reali delle 48 ore previste.
       Riduzione dell'errore e copertura si riferiscono alla variante con temperatura.</td></tr>`;
 }
 
@@ -659,14 +671,18 @@ function drawChart(el, { xHist, hist, xFut, actual, forecasts, unit, origin, end
   }, { responsive: true, displayModeBar: false, locale: "it" });
 }
 
-function windowErrors(el, actual, forecasts, hidden, unit) {
+// relative: also show the error as a share of the mean actual value. Off for wind,
+// where a turbine producing almost nothing would turn small errors into huge percentages.
+function windowErrors(el, actual, forecasts, hidden, unit, relative = false) {
+  const seen = actual.filter((v) => v !== null);
+  const level = seen.reduce((a, v) => a + Math.abs(v), 0) / seen.length;
   const rows = Object.entries(forecasts).filter(([n]) => !hidden.includes(n)).map(([name, f]) => {
     let s = 0, n = 0;
     actual.forEach((v, i) => { if (v !== null && f.mid[i] !== null) { s += Math.abs(v - f.mid[i]); n++; } });
     return { name, mae: s / n };
   }).sort((a, b) => a.mae - b.mae);
-  el.innerHTML = `<span class="title">Errore medio in questa previsione:</span>` +
-    rows.map((r) => `<span>${swatch(r.name)}${MODELS[r.name].label} ${fmt(r.mae)} ${unit}</span>`).join("");
+  el.innerHTML = `<span class="title">Scarto medio dal valore reale in questa previsione${relative ? ` (consumo medio ${fmt(level, 1)} ${unit} all'ora)` : ""}:</span>` +
+    rows.map((r) => `<span>${swatch(r.name)}${MODELS[r.name].label} ${relative ? `${fmt(100 * r.mae / level, 0)}% · ` : ""}${fmt(r.mae)} ${unit}</span>`).join("");
 }
 
 // ---------- wind chart ----------
@@ -718,7 +734,7 @@ function drawBdg2() {
     unit: "kWh", origin: stamp(0), end: stamp(w.actual.length), bands: bdg2State.bands,
     hidden: bdg2State.hidden, xIsTime: true, digits: 1,
   });
-  windowErrors(document.getElementById("bdg2-window"), w.actual, w.forecasts, bdg2State.hidden, "kWh");
+  windowErrors(document.getElementById("bdg2-window"), w.actual, w.forecasts, bdg2State.hidden, "kWh", true);
 }
 
 // ---------- technical section ----------
@@ -733,7 +749,7 @@ function findings() {
     ["Senza addestramento, vicino ai migliori",
       `Sull'eolico Timestral fa ${fmt(T)}: ${T < G ? "meglio della baseline ufficiale (" + fmt(G) + ") e " : ""}il ${fmt(100 * (T - W) / W, 1)}% sopra il vincitore della gara (${fmt(W)}), che era addestrato su questi dati e usava anche il vento.`],
     ["Testa a testa con Chronos-2",
-      `Timestral ha la previsione migliore in ${sd.timestralWins} casi eolici su ${sd.nCases} e un errore più basso sui consumi (${fmt(by["Timestral-209M + temp"].mae)} contro ${fmt(by["Chronos-2 + temp"].mae)} kWh).`],
+      `Timestral ha la previsione migliore in ${sd.timestralWins} casi eolici su ${sd.nCases} e un errore più basso sui consumi (${fmt(by["Timestral-209M + temp"].wape, 1)}% contro ${fmt(by["Chronos-2 + temp"].wape, 1)}% del consumo medio).`],
     reversed
       ? ["Attenzione ai campioni piccoli",
         `Su 10 soli casi la classifica si ribalta: Chronos-2 ${fmt(f10["Chronos-2"])}, Timestral ${fmt(f10["Timestral-209M"])}. Valutare un modello su pochi esempi può portare alla conclusione sbagliata.`]

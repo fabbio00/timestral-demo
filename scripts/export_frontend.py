@@ -126,10 +126,14 @@ def export_bdg2():
     buildings = [{"id": b, "usage": meta.primaryspaceusage[b], "detail": meta.sub_primaryspaceusage[b],
                   "site": meta.site_id[b], "sqm": float(meta.sqm[b])} for b in elec.columns]
     runs = pd.read_csv(RESULTS_DIR / "bdg2_smoke.csv")
-    metrics = [{"model": r.model, "mae": round(r.MAE_kWh, 2), "skill": round(r["MAE_skill_%"], 1),
-                "coverage": round(100 * r.cov_80, 1), "seconds": round(r.seconds, 1)} for _, r in runs.iterrows()]
-    return {"stepMinutes": 60, "buildings": buildings, "metrics": sorted(metrics, key=lambda r: r["mae"]),
-            "windows": windows}
+    # Targets have no gaps (windows() skips them), so MAE / mean(y) is the pooled WAPE:
+    # the error as a share of what the buildings actually consumed.
+    mean_kwh = float(y.mean())
+    metrics = [{"model": r.model, "mae": round(r.MAE_kWh, 2), "wape": round(100 * r.MAE_kWh / mean_kwh, 1),
+                "skill": round(r["MAE_skill_%"], 1), "coverage": round(100 * r.cov_80, 1), "seconds": round(r.seconds, 1)}
+               for _, r in runs.iterrows()]
+    return {"stepMinutes": 60, "buildings": buildings, "meanKWh": round(mean_kwh, 1),
+            "metrics": sorted(metrics, key=lambda r: r["mae"]), "windows": windows}
 
 
 def export_timing():

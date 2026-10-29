@@ -3,12 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Timestral vs Chronos-2</title>
+<title>Timestral alla prova</title>
+<meta name="description" content="Timestral, Chronos-2 e AutoARIMA a confronto su due benchmark industriali pubblici.">
 <style>
   :root {
     color-scheme: light;
     --page: #f9f9f7;
     --surface: #fcfcfb;
+    --surface-2: #f3f2ee;
     --ink: #0b0b0b;
     --ink-2: #52514e;
     --muted: #898781;
@@ -16,16 +18,20 @@
     --axis: #c3c2b7;
     --border: rgba(11, 11, 11, 0.10);
     --actual: #0b0b0b;
+    --forecast-bg: rgba(42, 120, 214, 0.05);
     --timestral: #2a78d6;
     --chronos: #eb6834;
     --arima: #1baf7a;
     --baseline: #898781;
+    --reference: #c3c2b7;
+    --accent-soft: #e8f0fb;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
       --page: #0d0d0d;
       --surface: #1a1a19;
+      --surface-2: #232321;
       --ink: #f0efec;
       --ink-2: #c3c2b7;
       --muted: #898781;
@@ -33,16 +39,20 @@
       --axis: #383835;
       --border: rgba(255, 255, 255, 0.10);
       --actual: #f0efec;
+      --forecast-bg: rgba(57, 135, 229, 0.08);
       --timestral: #3987e5;
       --chronos: #d95926;
       --arima: #199e70;
       --baseline: #898781;
+      --reference: #4a4a46;
+      --accent-soft: #1c2a3d;
     }
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
     --page: #0d0d0d;
     --surface: #1a1a19;
+    --surface-2: #232321;
     --ink: #f0efec;
     --ink-2: #c3c2b7;
     --muted: #898781;
@@ -50,10 +60,13 @@
     --axis: #383835;
     --border: rgba(255, 255, 255, 0.10);
     --actual: #f0efec;
+    --forecast-bg: rgba(57, 135, 229, 0.08);
     --timestral: #3987e5;
     --chronos: #d95926;
     --arima: #199e70;
     --baseline: #898781;
+    --reference: #4a4a46;
+    --accent-soft: #1c2a3d;
   }
 
   * { box-sizing: border-box; }
@@ -61,142 +74,253 @@
     margin: 0;
     background: var(--page);
     color: var(--ink);
-    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-  main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
-  header h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
-  header p { margin: 0; color: var(--ink-2); max-width: 720px; }
+  main { max-width: 1080px; margin: 0 auto; padding: 48px 16px 80px; }
+  h1, h2, h3 { line-height: 1.25; letter-spacing: -0.01em; }
+  p { margin: 0 0 12px; }
+  a { color: var(--timestral); }
 
+  /* ---------- header ---------- */
+  header h1 { font-size: 32px; margin: 0 0 12px; }
+  header .intro { color: var(--ink-2); max-width: 720px; font-size: 17px; }
+  .models { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
+  .model-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .model-card .name { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .model-card .kind { font-size: 13px; color: var(--muted); margin: 2px 0 6px; }
+  .model-card p { font-size: 14px; color: var(--ink-2); margin: 0; }
+
+  /* ---------- sections ---------- */
   section {
-    margin-top: 40px;
+    margin-top: 56px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
+    border-radius: 16px;
+    padding: 32px;
   }
-  section h2 { font-size: 20px; margin: 0 0 16px; }
+  section > h2 { font-size: 24px; margin: 0 0 6px; }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  h3.block { font-size: 17px; margin: 40px 0 6px; }
+  .block-sub { color: var(--ink-2); font-size: 15px; margin-bottom: 16px; max-width: 760px; }
 
-  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0 0 24px; }
-  .facts div { border-top: 2px solid var(--grid); padding-top: 10px; }
-  .facts dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
-  .facts dd { margin: 0; color: var(--ink-2); }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 0; }
+  .facts div { border-top: 2px solid var(--grid); padding-top: 12px; }
+  .facts dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+  .facts dd { margin: 0; color: var(--ink-2); font-size: 15px; }
 
-  .table-wrap { overflow-x: auto; margin-bottom: 24px; }
+  /* ---------- ranking bars ---------- */
+  .ranking { display: grid; gap: 10px; }
+  .rank-row { display: grid; grid-template-columns: 260px 1fr; align-items: center; gap: 16px; }
+  .rank-label { font-size: 15px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .rank-label.reference { color: var(--muted); }
+  .rank-track { position: relative; height: 22px; }
+  .rank-bar { height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
+  .rank-value { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 600;
+                font-variant-numeric: tabular-nums; padding-left: 8px; white-space: nowrap; }
+  .rank-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+  /* ---------- tables ---------- */
+  details.more-table { margin-top: 16px; }
+  details.more-table > summary {
+    cursor: pointer; font-size: 14px; color: var(--ink-2); list-style: none; display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2);
+  }
+  details.more-table > summary::-webkit-details-marker { display: none; }
+  details.more-table > summary::before { content: "▸"; font-size: 11px; transition: transform 0.15s; }
+  details.more-table[open] > summary::before { transform: rotate(90deg); }
+  .table-wrap { overflow-x: auto; margin-top: 16px; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
   th:first-child, td:first-child { text-align: left; }
-  th { font-weight: 600; color: var(--ink-2); font-size: 13px; }
+  th { font-weight: 600; color: var(--ink-2); font-size: 13px; vertical-align: bottom; }
   td { font-variant-numeric: tabular-nums; }
-  tr.reference td { color: var(--muted); font-style: italic; }
+  tr.reference td { color: var(--muted); }
   tr.best td { font-weight: 600; }
-  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 0; }
-  .note { font-size: 13px; color: var(--muted); margin: -16px 0 24px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .swatch.ref { background: var(--reference); }
 
-  .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; }
-  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
-  select {
-    font: inherit; font-size: 14px; color: var(--ink); background: var(--page);
-    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; min-width: 200px; max-width: 100%;
-  }
-  .chart { width: 100%; height: 420px; }
-  .window-score { font-size: 13px; color: var(--ink-2); margin-top: 4px; min-height: 20px; }
-
+  /* ---------- info popover ---------- */
   .info {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 18px; height: 18px; margin-left: 6px; padding: 0; vertical-align: 1px;
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 18px; height: 18px; margin-left: 4px; padding: 0; vertical-align: 1px;
     border: 1px solid var(--axis); border-radius: 50%; background: none; cursor: pointer;
     font: italic 600 11px/1 Georgia, serif; color: var(--ink-2);
   }
-  .info:hover, .info:focus-visible { border-color: var(--ink-2); outline: none; }
+  .info:hover, .info:focus-visible { border-color: var(--ink-2); background: var(--surface-2); outline: none; }
+  .star { border: 0; background: none; padding: 0 2px; cursor: pointer; color: var(--timestral); font: inherit; font-weight: 600; }
   #tooltip {
-    position: fixed; z-index: 10; display: none; width: 340px; max-width: calc(100vw - 32px);
-    padding: 12px 14px; border-radius: 10px; background: var(--surface); color: var(--ink);
-    border: 1px solid var(--axis); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-    font-size: 13px; line-height: 1.5; white-space: normal; font-style: normal; font-weight: 400;
+    position: fixed; z-index: 10; display: none; width: 360px; max-width: calc(100vw - 32px);
+    padding: 14px 16px; border-radius: 12px; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--axis); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    font-size: 14px; line-height: 1.55; white-space: normal; text-align: left; font-weight: 400;
   }
-  #tooltip strong { display: block; margin-bottom: 4px; }
+  #tooltip strong { display: block; margin-bottom: 6px; font-size: 14px; }
+  #tooltip p { margin: 0 0 8px; }
+  #tooltip p:last-child { margin: 0; }
 
+  /* ---------- chart ---------- */
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+  .controls label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+  select {
+    font: inherit; font-size: 15px; color: var(--ink); background: var(--page);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-width: 220px; max-width: 100%;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
+  }
+  .chip .key { width: 16px; height: 3px; border-radius: 2px; }
+  .chip[aria-pressed="false"] { color: var(--muted); background: var(--surface-2); }
+  .chip[aria-pressed="false"] .key { opacity: 0.25; }
+  .chip.static { cursor: default; }
+  .chip-sep { width: 1px; height: 20px; background: var(--grid); margin: 0 4px; }
+  .chart { width: 100%; height: 440px; }
+  .chart-hint { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .window-errors { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--ink-2); margin: 12px 0 0; }
+  .window-errors span { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+  .window-errors .title { color: var(--muted); }
+
+  /* ---------- AI ideas ---------- */
   .ideas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .ideas details { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; background: var(--page); }
+  .ideas details { border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; background: var(--page); }
   .ideas summary { cursor: pointer; list-style: none; }
   .ideas summary::-webkit-details-marker { display: none; }
-  .ideas summary h3 { font-size: 16px; margin: 0 0 4px; }
-  .ideas summary p { margin: 0; color: var(--ink-2); font-size: 14px; }
-  .ideas summary .more { display: inline-block; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .ideas summary h3 { font-size: 17px; margin: 0 0 6px; }
+  .ideas summary p { margin: 0; color: var(--ink-2); font-size: 15px; }
+  .ideas summary .more { display: inline-block; margin-top: 10px; font-size: 14px; color: var(--timestral); }
   .ideas details[open] summary .more { display: none; }
-  .ideas .body { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--grid); font-size: 14px; color: var(--ink-2); }
-  .ideas .body p { margin: 0 0 8px; }
-  .ideas .body ol { margin: 0 0 8px; padding-left: 20px; }
-  .lead { color: var(--ink-2); margin: -8px 0 20px; max-width: 760px; }
+  .ideas .body { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--grid); font-size: 15px; color: var(--ink-2); }
+  .ideas .body ol { margin: 0 0 10px; padding-left: 20px; }
+  .ideas .body li { margin-bottom: 4px; }
 
+  /* ---------- technical section ---------- */
+  .proscons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .proscons > div { border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; background: var(--page); }
+  .proscons h3 { font-size: 16px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .proscons ul { margin: 0 0 12px; padding: 0; list-style: none; font-size: 14px; color: var(--ink-2); }
+  .proscons li { padding-left: 20px; position: relative; margin-bottom: 6px; }
+  .proscons li::before { position: absolute; left: 0; font-weight: 700; }
+  .proscons .pro li::before { content: "+"; color: var(--arima); }
+  .proscons .con li::before { content: "−"; color: var(--chronos); }
+  .findings { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .finding { border-left: 3px solid var(--timestral); background: var(--page); border-radius: 0 12px 12px 0; padding: 14px 18px; }
+  .finding h4 { margin: 0 0 4px; font-size: 15px; }
+  .finding p { margin: 0; font-size: 14px; color: var(--ink-2); }
+  details.method { border-top: 1px solid var(--grid); padding: 14px 0; }
+  details.method:last-of-type { border-bottom: 1px solid var(--grid); }
+  details.method summary { cursor: pointer; font-weight: 600; font-size: 15px; }
+  details.method .body { color: var(--ink-2); font-size: 15px; margin-top: 10px; max-width: 820px; }
+  details.method ul { margin: 0; padding-left: 20px; }
+  details.method li { margin-bottom: 6px; }
+
+  footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+  footer p { margin-bottom: 6px; }
+
+  @media (max-width: 860px) {
+    .models { grid-template-columns: repeat(2, 1fr); }
+    .proscons { grid-template-columns: 1fr; }
+  }
   @media (max-width: 720px) {
-    .facts { grid-template-columns: 1fr; }
-    section { padding: 16px; }
-    .chart { height: 340px; }
+    main { padding-top: 32px; }
+    header h1 { font-size: 26px; }
+    section { padding: 20px 16px; margin-top: 40px; }
+    .facts, .ideas, .findings { grid-template-columns: 1fr; }
+    .models { grid-template-columns: 1fr; }
+    .rank-row { grid-template-columns: 1fr; gap: 4px; }
+    .chart { height: 360px; }
     select { min-width: 0; width: 100%; }
     .controls label { flex: 1 1 100%; }
-    .ideas { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>Timestral vs Chronos-2</h1>
-    <p>Previsioni su due benchmark industriali pubblici. Timestral e Chronos-2 non sono mai stati addestrati su questi dati:
-       li confrontiamo con un metodo statistico classico (ARIMA) e con i risultati delle gare.
-       Le linee sono la previsione mediana, le bande l'intervallo in cui il modello si aspetta il valore reale 8 volte su 10.</p>
+    <h1>Timestral alla prova</h1>
+    <p class="intro">Abbiamo messo il nuovo modello di previsione di Mistral su due problemi industriali con risultati pubblici di riferimento.
+      Timestral e Chronos-2 non sono mai stati addestrati su questi dati: ricevono lo storico e prevedono le 48 ore successive.</p>
+    <div class="models" id="model-cards"></div>
   </header>
 
+  <!-- ===================== WIND ===================== -->
   <section id="sdwpf">
-    <h2>Produzione di un parco eolico · KDD Cup 2022</h2>
+    <h2>Produzione di un parco eolico</h2>
+    <p class="section-sub">Benchmark della KDD Cup 2022 · 142 casi di test ufficiali</p>
     <dl class="facts">
-      <div><dt>Dataset</dt><dd>134 turbine di un parco eolico in Cina, una misura ogni 10 minuti. Usato nella KDD Cup 2022, con oltre 2.400 team in gara.</dd></div>
-      <div><dt>Dati in input</dt><dd>Gli ultimi 14 giorni di potenza prodotta da ciascuna turbina. Niente vento né meteo.</dd></div>
-      <div><dt>Obiettivo</dt><dd>Prevedere la potenza delle 48 ore successive, sui 142 casi di test ufficiali della gara.</dd></div>
+      <div><dt>Dataset</dt><dd>134 turbine di un parco eolico in Cina, una misura ogni 10 minuti. È il dataset della KDD Cup 2022, una gara con oltre 2.400 team.</dd></div>
+      <div><dt>Dati in input</dt><dd>Gli ultimi 14 giorni di potenza prodotta da ciascuna turbina. Niente vento, niente meteo: solo la produzione.</dd></div>
+      <div><dt>Obiettivo</dt><dd>Prevedere la potenza delle 48 ore successive, sui 142 casi usati per la classifica finale della gara.</dd></div>
     </dl>
-    <div class="table-wrap"><table id="sdwpf-metrics"></table></div>
-    <p class="note" id="sdwpf-note"></p>
+
+    <h3 class="block">Classifica <button class="info" type="button" data-info="kddScore" aria-label="Come si calcola il punteggio">i</button></h3>
+    <p class="block-sub">Punteggio ufficiale della gara: più è basso, più la previsione è vicina alla realtà. In grigio i risultati della gara, ottenuti con modelli addestrati su questi dati.</p>
+    <div class="ranking" id="sdwpf-ranking"></div>
+    <details class="more-table">
+      <summary>Tabella completa</summary>
+      <div class="table-wrap"><table id="sdwpf-metrics"></table></div>
+    </details>
+
+    <h3 class="block">Previsione contro realtà</h3>
+    <p class="block-sub">Scegli un caso di test e una turbina, oppure l'intero parco. La zona colorata è il periodo previsto: lì la linea nera è il valore reale che i modelli non hanno visto.</p>
     <div class="controls">
       <label>Caso di test <select id="sdwpf-case"></select></label>
       <label>Serie <select id="sdwpf-series"></select></label>
     </div>
-    <div class="window-score" id="sdwpf-window"></div>
+    <div class="chips" id="sdwpf-chips"></div>
     <div class="chart" id="sdwpf-chart"></div>
+    <p class="chart-hint" id="sdwpf-hint"></p>
+    <div class="window-errors" id="sdwpf-window"></div>
   </section>
 
+  <!-- ===================== BUILDINGS ===================== -->
   <section id="bdg2">
-    <h2>Consumi elettrici di edifici industriali · ASHRAE GEPIII</h2>
+    <h2>Consumi elettrici di edifici industriali</h2>
+    <p class="section-sub">Dati pubblici della gara Kaggle ASHRAE GEPIII · 14 edifici · 109 previsioni nel 2017</p>
     <dl class="facts">
-      <div><dt>Dataset</dt><dd>Contatori elettrici orari di edifici industriali (manifatture, centrali di servizio, magazzini, laboratori). È la base dati della gara Kaggle ASHRAE GEPIII, con 3.614 team.</dd></div>
-      <div><dt>Dati in input</dt><dd>Circa 6 mesi di consumi orari di ogni edificio e la temperatura esterna del sito.</dd></div>
+      <div><dt>Dataset</dt><dd>Contatori elettrici orari di edifici industriali: manifatture, magazzini, laboratori. Vengono dalla gara Kaggle ASHRAE GEPIII,
+        che però chiedeva un compito diverso. <button class="info" type="button" data-info="ashrae" aria-label="Differenze con la gara ASHRAE">i</button></dd></div>
+      <div><dt>Dati in input</dt><dd>Circa 6 mesi di consumi orari dell'edificio. Nella variante "con temperatura" anche la temperatura esterna. <button class="info" type="button" data-info="temperature" aria-label="Cosa significa con temperatura">i</button></dd></div>
       <div><dt>Obiettivo</dt><dd>Prevedere il consumo delle 48 ore successive, partendo da 9 date diverse del 2017.</dd></div>
     </dl>
-    <div class="table-wrap"><table id="bdg2-metrics"></table></div>
-    <p class="note">Riduzione dell'errore rispetto a "ripetere la settimana precedente". Copertura: quante volte il valore reale cade nella banda, idealmente l'80%.</p>
+
+    <h3 class="block">Classifica <button class="info" type="button" data-info="mae" aria-label="Cos'è l'errore medio">i</button></h3>
+    <p class="block-sub">Errore medio per ora, in kWh, con la temperatura come informazione aggiuntiva: più è basso, meglio è.</p>
+    <div class="ranking" id="bdg2-ranking"></div>
+    <details class="more-table">
+      <summary>Tabella completa: con e senza temperatura</summary>
+      <div class="table-wrap"><table id="bdg2-metrics"></table></div>
+    </details>
+
+    <h3 class="block">Previsione contro realtà</h3>
+    <p class="block-sub">Le previsioni mostrate usano la temperatura. Scegli un edificio e la data da cui parte la previsione.</p>
     <div class="controls">
       <label>Edificio <select id="bdg2-building"></select></label>
       <label>Inizio previsione <select id="bdg2-origin"></select></label>
     </div>
-    <div class="window-score" id="bdg2-window"></div>
+    <div class="chips" id="bdg2-chips"></div>
     <div class="chart" id="bdg2-chart"></div>
+    <p class="chart-hint">Trascina sul grafico per ingrandire un periodo, doppio clic per tornare alla vista intera.</p>
+    <div class="window-errors" id="bdg2-window"></div>
   </section>
 
+  <!-- ===================== AI ===================== -->
   <section id="ai">
     <h2>AI powered</h2>
-    <p class="lead">Timestral produce i numeri; un agente AI può ragionarci sopra e raccontarli.
-      Quattro modi per estendere la demo, dal più semplice al più ambizioso. Non sono attivi in questa pagina.</p>
+    <p class="section-sub">Idee per estendere la demo · non attive in questa pagina</p>
+    <p class="block-sub">Timestral produce i numeri; un agente AI può ragionarci sopra e raccontarli. Quattro modi, dal più semplice al più ambizioso.</p>
     <div class="ideas">
       <details>
         <summary>
           <h3>Spiega questa previsione</h3>
           <p>Tre o quattro frasi in italiano sotto ogni grafico, per chi non legge le serie temporali.</p>
-          <span class="more">Come si amplia con un agente →</span>
+          <span class="more">Come si realizza con un agente →</span>
         </summary>
         <div class="body">
-          <p>Dalla previsione si calcolano i fatti salienti: picchi e orari critici, larghezza della banda, scostamento dalla settimana tipo.
-            Un LLM li trasforma in un testo, per esempio: "domani il consumo seguirà il ciclo feriale con un picco di circa 250 kWh alle 10; domenica l'incertezza è alta".</p>
-          <p><strong>Ampliamento:</strong> un report automatico ogni mattina per ciascun reparto o impianto, inviato al responsabile.
+          <p>Dalla previsione si calcolano i fatti salienti: picchi e orari critici, ampiezza della banda, scostamento dalla settimana tipo.
+            Un LLM li trasforma in testo, per esempio: "domani il consumo seguirà il ciclo feriale con un picco di circa 250 kWh alle 10; domenica l'incertezza è alta".</p>
+          <p><strong>Ampliamento:</strong> un report automatico ogni mattina per ogni reparto o impianto, inviato al responsabile.
             L'LLM scrive solo a partire da numeri già calcolati, quindi non può inventarli.</p>
         </div>
       </details>
@@ -204,12 +328,12 @@
         <summary>
           <h3>Scenari "what-if"</h3>
           <p>"Cosa succede se domani fa 5 °C in più?" "E se sposto il turno di saldatura a giovedì?"</p>
-          <span class="more">Come si amplia con un agente →</span>
+          <span class="more">Come si realizza con un agente →</span>
         </summary>
         <div class="body">
           <ol>
-            <li>L'agente traduce la domanda in una modifica delle covariate future: temperatura, piano turni, calendario.</li>
-            <li>Rilancia Timestral con lo scenario modificato, in meno di un secondo su CPU.</li>
+            <li>L'agente traduce la domanda in una modifica delle informazioni sul futuro: temperatura, piano turni, calendario.</li>
+            <li>Rilancia Timestral con lo scenario modificato.</li>
             <li>Confronta lo scenario con la previsione base e spiega cosa cambia: picco, energia totale, rischio di superare la potenza contrattuale.</li>
           </ol>
           <p><strong>Ampliamento:</strong> collegato al piano di produzione del cantiere, aiuta a spostare le lavorazioni energivore e a dimensionare i contratti di fornitura.</p>
@@ -219,12 +343,12 @@
         <summary>
           <h3>Agente per le anomalie</h3>
           <p>Scorre tutte le macchine, segnala quelle che escono dalla banda prevista e prova a capire perché.</p>
-          <span class="more">Come si amplia con un agente →</span>
+          <span class="more">Come si realizza con un agente →</span>
         </summary>
         <div class="body">
           <ol>
             <li>Timestral prevede ogni macchina, o ogni turbina: un valore reale fuori dalla banda è un segnale.</li>
-            <li>L'agente confronta la macchina con quelle simili e controlla le altre variabili. Sull'eolico: angolo delle pale, temperature, velocità del vento.</li>
+            <li>L'agente confronta la macchina con quelle simili e controlla le altre variabili. Sull'eolico: angolo delle pale, temperature, vento.</li>
             <li>Propone un'ipotesi, per esempio: "turbina 67 a zero con vento a 8 m/s e pale a 90°: probabile fermo per sicurezza".</li>
           </ol>
           <p><strong>Ampliamento:</strong> l'agente cerca casi simili nello storico delle manutenzioni, nei log e nei manuali, e apre un ticket con le evidenze allegate.
@@ -235,239 +359,449 @@
         <summary>
           <h3>Chat sui dati di produzione</h3>
           <p>"Quale reparto consumerà di più domani?" "Quali macchine sono andate peggio questa settimana?"</p>
-          <span class="more">Come si amplia con un agente →</span>
+          <span class="more">Come si realizza con un agente →</span>
         </summary>
         <div class="body">
           <p>L'agente ha a disposizione degli strumenti: leggere le serie, lanciare previsioni, calcolare metriche.
             Sceglie da solo quali usare e risponde con numeri e grafici.</p>
           <p><strong>Ampliamento:</strong> integrazione con i sistemi del cliente (MES, ERP, SCADA).
-            Con un LLM Mistral in locale tutto resta nell'infrastruttura del cliente, senza che i dati escano dall'azienda.</p>
+            Con un LLM Mistral in locale tutto resta nell'infrastruttura del cliente.</p>
         </div>
       </details>
     </div>
   </section>
+
+  <!-- ===================== TECH ===================== -->
+  <section id="tech">
+    <h2>Approfondimento tecnico</h2>
+    <p class="section-sub">Pro e contro, risultati interessanti e come abbiamo misurato</p>
+
+    <h3 class="block" style="margin-top: 0">Pro e contro dei modelli</h3>
+    <div class="proscons">
+      <div>
+        <h3><span class="swatch" style="background: var(--timestral)"></span>Timestral-209M</h3>
+        <ul class="pro">
+          <li>Il più preciso nei nostri test, su entrambi i dataset</li>
+          <li>Bande di incertezza affidabili</li>
+          <li>Storico fino a 32.768 passi; accetta informazioni sul futuro e categoriche</li>
+          <li>Gira su CPU, anche in ambienti isolati dalla rete</li>
+        </ul>
+        <ul class="con">
+          <li>Gratuito solo per aziende sotto i 20 M$ di fatturato mensile</li>
+          <li>Fine-tuning solo tramite Mistral Forge, a pagamento</li>
+          <li>Su Mac non usa la GPU: più lento di Chronos-2</li>
+          <li>In preview da ottobre 2026; dati di addestramento non dichiarati</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="swatch" style="background: var(--chronos)"></span>Chronos-2</h3>
+        <ul class="pro">
+          <li>Licenza Apache 2.0: uso commerciale libero</li>
+          <li>Fine-tuning open source incluso nella libreria</li>
+          <li>Il più veloce, anche grazie alla GPU del Mac</li>
+          <li>In circolazione da un anno, più casi d'uso documentati</li>
+        </ul>
+        <ul class="con">
+          <li>Un po' meno preciso di Timestral in entrambi i test</li>
+          <li>Bande un po' strette: il valore reale ne esce più spesso del previsto</li>
+          <li>Storico massimo 8.192 passi</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="swatch" style="background: var(--arima)"></span>AutoARIMA</h3>
+        <ul class="pro">
+          <li>Metodo standard, interpretabile, senza licenze</li>
+          <li>Nessun modello da scaricare</li>
+        </ul>
+        <ul class="con">
+          <li>Va stimato da zero per ogni serie: lento con cicli giornalieri o settimanali</li>
+          <li>Richiede scelte manuali: finestra di stima, termini stagionali</li>
+          <li>Nettamente meno preciso; con la temperatura peggiora</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 class="block">Risultati interessanti</h3>
+    <div class="findings" id="findings"></div>
+
+    <h3 class="block">Come abbiamo misurato</h3>
+    <details class="method">
+      <summary>Eolico: test e punteggio</summary>
+      <div class="body"><ul>
+        <li>Casi di test ufficiali della fase finale della KDD Cup 2022 (maggio-ottobre 2021): per ogni caso il modello riceve solo il file di input, la risposta serve solo a calcolare il punteggio.</li>
+        <li>Il punteggio replica il codice ufficiale di valutazione: MAE e RMSE in MW per turbina, sommati sulle 134 turbine, media sui casi. Come nella gara, sono esclusi i punti anomali (dati mancanti, turbina ferma con vento, pale in blocco) e le turbine con previsione o valore reale tutto a zero.
+          Il nostro calcolo coincide con il codice ufficiale di Baidu, verificato eseguendolo sulle stesse previsioni.</li>
+        <li>Per i modelli le cui previsioni il regolamento avrebbe scartato (ultimo valore, e AutoARIMA in alcuni casi) il punteggio conta tutte le turbine, segnato con †.</li>
+        <li>Pulizia dello storico come indicano gli autori del dataset: la potenza leggermente negativa (turbina ferma per vento debole) diventa zero;
+          i punti sconosciuti (pale in bandiera, turbina ferma con vento, dati mancanti) arrivano ai modelli come mancanti.</li>
+        <li>"Ripeti l'ultimo valore" è solo un riferimento: il regolamento della gara non lo avrebbe accettato, perché scarta le previsioni costanti.</li>
+        <li>AutoARIMA è stimato sugli ultimi 3 giorni e gira su 20 casi distribuiti sui 142, per tenere il calcolo sotto i 10 minuti.</li>
+      </ul></div>
+    </details>
+    <details class="method">
+      <summary>Consumi: edifici, finestre e temperatura</summary>
+      <div class="body"><ul>
+        <li>Edifici di tipo manifatturiero, magazzino, laboratorio e centrale di servizio, con almeno il 95% delle ore misurate. Esclusi i siti presenti nei dati di addestramento pubblici usati da questi modelli.</li>
+        <li>9 date di partenza nel 2017, ogni 5 settimane; storico di 4.096 ore (circa 6 mesi), orizzonte 48 ore.</li>
+        <li>Escluse le finestre in cui il contatore è spento per più di metà delle ore: lo stesso filtro per tutti i modelli.</li>
+        <li>La temperatura delle 48 ore future è quella misurata: equivale a una previsione meteo perfetta, quindi in produzione il guadagno sarà un po' più basso.</li>
+        <li>AutoARIMA: stimato sulle ultime 4 settimane, cicli giornaliero e settimanale come 6 coppie di termini di Fourier, scelte su finestre di validazione del 2016 separate dal test.</li>
+      </ul></div>
+    </details>
+    <details class="method">
+      <summary>Dati già visti in addestramento</summary>
+      <div class="body"><ul>
+        <li>Un corpus pubblico usato per addestrare questi modelli contiene parte dei dati della KDD Cup e 4 siti di edifici: quei siti sono esclusi dal test sui consumi.</li>
+        <li>I casi di test eolici sono successivi ai dati pubblicati per la gara, ma il dataset completo è pubblico dal 2024. Chronos-2 dichiara di aver escluso questi benchmark; Mistral non dichiara i dati di addestramento di Timestral, quindi per Timestral non si può escludere.</li>
+      </ul></div>
+    </details>
+    <details class="method">
+      <summary>Tempi di calcolo</summary>
+      <div class="body">
+        <p>Misurati su un MacBook con chip M4 e 24 GB di RAM, un modello alla volta, mediana di 3 esecuzioni. Previsione a 48 ore con 14 giorni di storico.</p>
+        <p>Timestral, con le impostazioni di default, calcola due previsioni (sulla serie e sulla serie ribaltata di segno) e ne fa la media:
+          la previsione è più stabile, ma il tempo raddoppia. Su Mac non può usare la GPU, perché i suoi calcoli richiedono una precisione che la GPU Apple non supporta.</p>
+        <div class="table-wrap"><table id="timing"></table></div>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    <p>Dati: <a href="https://doi.org/10.1038/s41597-024-03427-5">SDWPF</a> (Zhou et al., Scientific Data 2024, CC BY 4.0) ·
+      <a href="https://github.com/buds-lab/building-data-genome-project-2">Building Data Genome 2</a> (Miller et al., Scientific Data 2020, CC BY-SA 4.0; qui in estratto).</p>
+    <p>Modelli: <a href="https://huggingface.co/mistralai/Timestral-209M">Timestral-209M</a> (Mistral, Modified MIT) ·
+      <a href="https://huggingface.co/amazon/chronos-2">Chronos-2</a> (Amazon, Apache 2.0) · AutoARIMA (statsforecast).</p>
+  </footer>
 </main>
 <div id="tooltip" role="tooltip"></div>
 
 <script src="data.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.35.2/dist/plotly-locale-it.js"></script>
 <script>
 const DATA = window.DEMO_DATA;
 
-const LABELS = {
-  "Timestral-209M": "Timestral-209M",
-  "Chronos-2": "Chronos-2",
-  "Persistence": "Persistenza (ultimo valore)",
-  "Seasonal naive": "Ripeti settimana precedente",
-  "AutoARIMA": "AutoARIMA",
+// ---------- models ----------
+const MODELS = {
+  "Timestral-209M": { label: "Timestral-209M", color: "--timestral", kind: "Pre-addestrato · Mistral",
+    desc: "Nuovo modello di Mistral (ottobre 2026), 209 milioni di parametri. Non viene addestrato su questi dati." },
+  "Chronos-2": { label: "Chronos-2", color: "--chronos", kind: "Pre-addestrato · Amazon",
+    desc: "Il riferimento open source (2025), circa 120 milioni di parametri. Anche lui non viene addestrato su questi dati." },
+  "AutoARIMA": { label: "AutoARIMA", color: "--arima", kind: "Statistico classico",
+    desc: "Il metodo tradizionale: stima un modello nuovo per ogni serie, ogni volta che deve prevedere." },
+  "Persistence": { label: "Ripeti l'ultimo valore", color: "--baseline", kind: "Riferimento minimo",
+    desc: "Assume che la potenza resti uguale all'ultimo valore misurato. La gara non l'avrebbe accettato: scartava le previsioni costanti." },
+  "Seasonal naive": { label: "Ripeti la settimana prima", color: "--baseline", kind: "Riferimento minimo",
+    desc: "Assume che ogni ora sia uguale alla stessa ora della settimana precedente." },
 };
-
-const INFO = {
-  "Vincitore KDD Cup 2022 (HIK)":
-    "<strong>Come è stato ottenuto</strong>Team HIK (Hikvision e Università di Zhejiang), primo nella fase finale tra oltre 2.400 team. " +
-    "È un ensemble addestrato sui 245 giorni di dati della gara. Da una parte una rete neurale spazio-temporale: GRU encoder-decoder che collega ogni turbina " +
-    "alle vicine tramite grafi, per vicinanza fisica e per andamento simile del vento. Dall'altra modelli LightGBM costruiti per gruppi di turbine e fasce dell'orizzonte. " +
-    "Un modulo di ensemble combina le due previsioni. Usa tutte le variabili SCADA: vento, direzione, temperature, angolo delle pale. " +
-    "Timestral e Chronos-2 invece vedono solo lo storico della potenza, senza addestramento.",
-  "Baseline ufficiale GRU":
-    "<strong>Come è stata ottenuta</strong>La baseline fornita da Baidu a tutti i partecipanti: una rete GRU a 2 strati per ciascuna delle 134 turbine, " +
-    "addestrata su 153 giorni e validata su 16. In input l'ultimo giorno (144 misure) di tutte le 10 variabili SCADA, in output le 48 ore successive.",
-  "AutoARIMA":
-    "<strong>Metodo statistico classico</strong>Per ogni serie e ogni finestra viene stimato da zero un modello ARIMA, scegliendo i parametri in automatico. " +
-    "Eolico: stimato sugli ultimi 3 giorni di potenza. Consumi: stimato sulle ultime 4 settimane, con i cicli giornaliero e settimanale passati come termini di Fourier. " +
-    "Un ARIMA stagionale classico con periodo di 24 ore richiede 20-30 secondi per ogni serie, troppo per migliaia di previsioni. " +
-    "I buchi nei dati vengono interpolati.",
-};
-const infoButton = (name) => INFO[name.replace(" + temp", "")]
-  ? `<button class="info" type="button" data-info="${name.replace(" + temp", "")}" aria-label="Dettagli su ${name}">i</button>` : "";
-const label = (name) => {
-  const withTemp = name.endsWith(" + temp");
-  const base = LABELS[name.replace(" + temp", "")] || name;
-  return withTemp ? `${base} + temperatura` : base;
-};
-const colorVar = (name) =>
-  name.startsWith("Timestral") ? "--timestral" : name.startsWith("Chronos") ? "--chronos"
-    : name.startsWith("AutoARIMA") ? "--arima" : "--baseline";
-// Bands only for the two foundation models: a third band would bury the lines.
-const hasBand = (name) => name.startsWith("Timestral") || name.startsWith("Chronos");
+const REFERENCES = { "Vincitore KDD Cup 2022 (HIK)": "winner", "Baseline ufficiale GRU": "gru" };
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const fmt = (x, d = 2) => x.toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmt = (x, d = 2) => Number(x).toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (x) => fmt(x, 0) + "%";
+const swatch = (name) => `<span class="swatch" style="background:var(${MODELS[name].color})"></span>`;
+const infoBtn = (key, what) => `<button class="info" type="button" data-info="${key}" aria-label="Dettagli: ${what}">i</button>`;
+const strictMark = `<button class="star" type="button" data-info="strict" aria-label="Punteggio contando tutte le turbine">†</button>`;
 
-function swatch(name) {
-  return `<span class="swatch" style="background:var(${colorVar(name)})"></span>`;
+// ---------- popover texts ----------
+const sd = DATA.sdwpf, bd = DATA.bdg2;
+const INFO = {
+  kddScore: `<strong>Punteggio della gara</strong><p>Per ogni turbina si misura l'errore della previsione in MW: l'errore medio (MAE) e l'errore quadratico medio (RMSE), che pesa di più gli errori grandi.
+    Si sommano le 134 turbine e si fa la media dei due valori, poi la media sui casi di test.</p><p>È esattamente il calcolo usato per la classifica ufficiale della gara.</p>`,
+  winner: `<strong>Vincitore KDD Cup 2022: team HIK</strong><p>Hikvision e Università di Zhejiang, primi nella fase finale tra oltre 2.400 team.</p>
+    <p>Ensemble addestrato sui 245 giorni di dati della gara: una rete neurale (GRU) che collega ogni turbina alle vicine, più modelli LightGBM per gruppi di turbine.
+    Usa tutte le variabili delle turbine (vento, direzione, temperature, angolo delle pale), non solo la potenza.</p>`,
+  gru: `<strong>Baseline ufficiale</strong><p>Fornita da Baidu a tutti i partecipanti: una rete neurale GRU per ciascuna turbina, addestrata su 153 giorni.
+    In input l'ultimo giorno di tutte le 10 variabili delle turbine.</p>`,
+  arimaSubset: `<strong>AutoARIMA su ${sd.arimaCases} casi</strong><p>Stimare un ARIMA per ogni turbina su tutti i 142 casi richiederebbe circa 50 minuti: lo abbiamo calcolato su ${sd.arimaCases} casi distribuiti sui 142.</p>
+    <p>Sugli stessi ${sd.arimaCases} casi: Timestral ${fmt(sd.sameCases["Timestral-209M"])}, Chronos-2 ${fmt(sd.sameCases["Chronos-2"])},
+    AutoARIMA ${fmt(sd.sameCases["AutoARIMA"])}, ultimo valore ${fmt(sd.sameCases["Persistence"])}.</p>`,
+  ashrae: `<strong>Stessi dati, compito diverso</strong><p>La gara ASHRAE GEPIII (2019, 3.614 team) chiedeva di addestrarsi sul 2016 e prevedere due anni interi di consumi, per stimare i risparmi dopo una ristrutturazione.</p>
+    <p>Noi usiamo i suoi dati per il caso d'uso operativo: prevedere le prossime 48 ore partendo dallo storico recente. Per questo qui non c'è un confronto con la classifica della gara.</p>`,
+  strict: `<strong>Punteggio contando tutte le turbine</strong><p>Il regolamento esclude dal punteggio le turbine per cui la previsione è tutta a zero.
+    Per evitare che qualcuno ne approfitti, scarta le consegne con previsioni costanti o con troppe turbine a zero.</p>
+    <p>Le previsioni di questo modello sarebbero state scartate (ultimo valore: ${sd.rejected["Persistence"]} casi su ${sd.nCases}; AutoARIMA: ${sd.rejected["AutoARIMA"]} su ${sd.arimaCases}),
+    quindi qui contiamo tutte le turbine. Timestral e Chronos-2 non sono mai stati scartati.</p>`,
+  mae: `<strong>Errore medio (MAE)</strong><p>Di quanti kWh, in media, la previsione di ogni ora si discosta dal consumo reale. Calcolato su tutte le ${bd.windows.length} previsioni da 48 ore.</p>`,
+  temperature: `<strong>Cosa significa "con temperatura"</strong><p>Oltre allo storico dei consumi, il modello riceve la temperatura esterna prevista per le 48 ore da prevedere: un'informazione nota in anticipo, come un piano di produzione.</p>
+    <p>Qui usiamo la temperatura poi misurata, cioè una previsione meteo perfetta: in produzione il guadagno sarebbe un po' più basso.</p>`,
+  reduction: `<strong>Riduzione dell'errore</strong><p>Quanto l'errore è più basso rispetto al metodo più semplice: ripetere la stessa ora della settimana precedente. −40% significa che si sbaglia il 40% in meno.</p>`,
+  coverage: `<strong>Copertura della banda</strong><p>Ogni modello indica una banda in cui si aspetta il valore reale 8 volte su 10. La copertura è quante volte ci cade davvero: l'ideale è l'80%.</p>
+    <p>Sotto l'80% il modello è troppo sicuro di sé; sopra, troppo prudente.</p>`,
+  bands: `<strong>Bande di incertezza</strong><p>L'area colorata attorno a ogni previsione è l'intervallo in cui il modello si aspetta il valore reale 8 volte su 10.</p>`,
+  seconds: `<strong>Tempo</strong><p>Tempo di calcolo medio per un caso di test: tutte le 134 turbine a 48 ore. Per un confronto a parità di condizioni vedi i tempi nell'approfondimento tecnico.</p>`,
+};
+for (const [name, m] of Object.entries(MODELS)) INFO[name] = `<strong>${m.label} · ${m.kind}</strong><p>${m.desc}</p>`;
+
+// ---------- header cards ----------
+document.getElementById("model-cards").innerHTML = ["Timestral-209M", "Chronos-2", "AutoARIMA", "Persistence"].map((n) => {
+  const m = n === "Persistence" ? { ...MODELS[n], label: "Riferimenti semplici",
+    desc: "Ripetere l'ultimo valore, o la stessa ora della settimana prima: il minimo da battere." } : MODELS[n];
+  return `<div class="model-card"><div class="name">${swatch(n)}${m.label}</div><div class="kind">${m.kind}</div><p>${m.desc}</p></div>`;
+}).join("");
+
+// ---------- ranking bars ----------
+function ranking(el, rows, unit, digits = 2) {
+  const max = Math.max(...rows.map((r) => r.value));
+  const best = rows.filter((r) => !r.reference).reduce((a, b) => (a.value < b.value ? a : b));
+  el.innerHTML = rows.map((r) => {
+    const color = r.reference ? "var(--reference)" : `var(${MODELS[r.model].color})`;
+    const name = r.reference
+      ? `<span class="swatch ref"></span>${r.model}${infoBtn(REFERENCES[r.model], r.model)}`
+      : `${swatch(r.model)}${r.label || MODELS[r.model].label}${infoBtn(r.model, r.model)}`;
+    const w = (100 * r.value / max) * 0.82;
+    return `<div class="rank-row"><div class="rank-label ${r.reference ? "reference" : ""}" ${r === best ? 'style="font-weight:600"' : ""}>${name}</div>
+      <div class="rank-track"><div class="rank-bar" style="width:${w}%;background:${color}"></div>
+      <span class="rank-value" style="left:${w}%">${fmt(r.value, digits)}${unit}${r.strict ? strictMark : ""}</span></div></div>`;
+  }).join("");
 }
 
-// ---------- tables ----------
-function sdwpfTable() {
-  const rows = DATA.sdwpf.metrics;
-  const best = rows.find((r) => !r.reference).model;
+function sdwpfTables() {
+  const rows = sd.metrics.filter((r) => r.reference || r.cases === sd.nCases);
+  ranking(document.getElementById("sdwpf-ranking"),
+    rows.map((r) => ({ model: r.model, value: r.score, reference: r.reference, strict: r.strict })), "");
+  const best = sd.metrics.find((r) => !r.reference).model;
   document.getElementById("sdwpf-metrics").innerHTML =
-    `<tr><th>Modello</th><th>Punteggio gara</th><th>MAE (MW)</th><th>RMSE (MW)</th><th>Tempo per caso</th></tr>` +
-    rows.map((r) => r.reference
-      ? `<tr class="reference"><td>${r.model}${infoButton(r.model)}</td><td>${fmt(r.score)}</td><td></td><td></td><td></td></tr>`
-      : `<tr class="${r.model === best ? "best" : ""}"><td>${swatch(r.model)}${label(r.model)}${infoButton(r.model)}</td>` +
-        `<td>${fmt(r.score)}${r.cases < DATA.sdwpf.nCases ? "*" : ""}</td>` +
-        `<td>${fmt(r.mae)}</td><td>${fmt(r.rmse)}</td><td>${fmt(r.seconds, 1)} s</td></tr>`).join("");
-  const n = DATA.sdwpf.nCases, same = DATA.sdwpf.sameCases;
-  document.getElementById("sdwpf-note").textContent =
-    `Punteggio ufficiale della gara: media di MAE e RMSE sommati sulle 134 turbine, più basso è meglio. ` +
-    (n < 142 ? `Calcolato su ${n} dei 142 casi: risultato preliminare. ` : `Calcolato su tutti i 142 casi. `) +
-    `* AutoARIMA solo su ${DATA.sdwpf.arimaCases} casi distribuiti sui 142, per tenere il calcolo sotto i 10 minuti. ` +
-    `Sugli stessi casi: Timestral ${fmt(same["Timestral-209M"])}, Chronos-2 ${fmt(same["Chronos-2"])}, ` +
-    `AutoARIMA ${fmt(same["AutoARIMA"])}, persistenza ${fmt(same["Persistence"])}.`;
+    `<tr><th>Modello</th><th>Punteggio${infoBtn("kddScore", "punteggio")}</th><th>MAE (MW)</th><th>RMSE (MW)</th><th>Tempo per caso${infoBtn("seconds", "tempo")}</th></tr>` +
+    sd.metrics.map((r) => r.reference
+      ? `<tr class="reference"><td><span style="display:inline-flex;align-items:center;gap:8px"><span class="swatch ref"></span>${r.model}${infoBtn(REFERENCES[r.model], r.model)}</span></td>
+         <td>${fmt(r.score)}</td><td>—</td><td>—</td><td>—</td></tr>`
+      : `<tr class="${r.model === best ? "best" : ""}"><td><span style="display:inline-flex;align-items:center;gap:8px">${swatch(r.model)}${MODELS[r.model].label}</span></td>
+         <td>${fmt(r.score)}${r.strict ? strictMark : ""}${r.cases < sd.nCases ? `<button class="star" type="button" data-info="arimaSubset" aria-label="Calcolato su ${sd.arimaCases} casi">*</button>` : ""}</td>
+         <td>${fmt(r.mae)}</td><td>${fmt(r.rmse)}</td><td>${fmt(r.seconds, 1)} s</td></tr>`).join("");
 }
 
-function bdg2Table() {
-  const rows = DATA.bdg2.metrics;
+function bdg2Tables() {
+  const by = Object.fromEntries(bd.metrics.map((r) => [r.model, r]));
+  const order = ["Timestral-209M", "Chronos-2", "AutoARIMA", "Seasonal naive"];
+  ranking(document.getElementById("bdg2-ranking"), order.map((m) => ({
+    model: m, value: (by[`${m} + temp`] || by[m]).mae,
+    label: m === "Seasonal naive" ? MODELS[m].label : undefined,
+  })), " kWh");
   document.getElementById("bdg2-metrics").innerHTML =
-    `<tr><th>Modello</th><th>MAE (kWh)</th><th>Riduzione errore</th><th>Copertura banda</th><th>Tempo totale</th></tr>` +
-    rows.map((r, i) => `<tr class="${i === 0 ? "best" : ""}"><td>${swatch(r.model)}${label(r.model)}${infoButton(r.model)}</td>` +
-      `<td>${fmt(r.mae)}</td><td>${r.skill > 0 ? "−" + fmt(r.skill, 1) + "%" : "—"}</td>` +
-      `<td>${r.model === "Seasonal naive" ? "—" : fmt(r.coverage, 0) + "%"}</td><td>${fmt(r.seconds, 1)} s</td></tr>`).join("");
+    `<tr><th>Modello</th><th>Errore · solo storico${infoBtn("mae", "errore medio")}</th><th>Errore · con temperatura${infoBtn("temperature", "temperatura")}</th>` +
+    `<th>Riduzione errore${infoBtn("reduction", "riduzione dell'errore")}</th><th>Copertura banda${infoBtn("coverage", "copertura")}</th></tr>` +
+    order.map((m, i) => {
+      const plain = by[m], temp = by[`${m} + temp`], shown = temp || plain;
+      return `<tr class="${i === 0 ? "best" : ""}"><td><span style="display:inline-flex;align-items:center;gap:8px">${swatch(m)}${MODELS[m].label}</span></td>
+        <td>${fmt(plain.mae)} kWh</td><td>${temp ? fmt(temp.mae) + " kWh" : "—"}</td>
+        <td>${shown.skill > 0 ? "−" + fmt(shown.skill, 0) + "%" : "riferimento"}</td>
+        <td>${m === "Seasonal naive" ? "—" : pct(shown.coverage)}</td></tr>`;
+    }).join("") +
+    `<tr><td colspan="5" style="white-space:normal;color:var(--muted);font-size:13px;text-align:left;border:0;padding-top:12px">
+      Riduzione dell'errore e copertura si riferiscono alla variante con temperatura.</td></tr>`;
 }
 
-// ---------- chart ----------
-function forecastTraces(x, forecasts, unit, bands) {
+// ---------- charts ----------
+const store = {
+  get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch { return fallback; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable: keep in memory */ } },
+};
+
+function makeChips(el, key, models, onChange) {
+  const state = store.get(key, { hidden: [], bands: true });
+  const render = () => {
+    el.innerHTML =
+      `<span class="chip static"><span class="key" style="background:var(--actual)"></span>Valore reale</span><span class="chip-sep"></span>` +
+      models.map((m) => `<button class="chip" type="button" data-model="${m}" aria-pressed="${!state.hidden.includes(m)}">
+        <span class="key" style="background:var(${MODELS[m].color})"></span>${MODELS[m].label}</button>`).join("") +
+      `<span class="chip-sep"></span><button class="chip" type="button" data-bands aria-pressed="${state.bands}">Bande di incertezza</button>${infoBtn("bands", "bande")}`;
+  };
+  el.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip:not(.static)");
+    if (!chip) return;
+    if (chip.hasAttribute("data-bands")) state.bands = !state.bands;
+    else {
+      const m = chip.dataset.model;
+      state.hidden = state.hidden.includes(m) ? state.hidden.filter((x) => x !== m) : [...state.hidden, m];
+    }
+    store.set(key, state);
+    render();
+    onChange();
+  });
+  render();
+  return state;
+}
+
+function drawChart(el, { xHist, hist, xFut, actual, forecasts, unit, origin, end, bands, hidden, xIsTime, digits }) {
   const traces = [];
   for (const [name, f] of Object.entries(forecasts)) {
-    const color = css(colorVar(name));
-    const isBaseline = colorVar(name) === "--baseline";
-    if (bands && hasBand(name)) {
-      traces.push({ x, y: f.hi, mode: "lines", line: { width: 0 }, hoverinfo: "skip", showlegend: false, legendgroup: name });
-      traces.push({ x, y: f.lo, mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: color + "1f",
-                    hoverinfo: "skip", showlegend: false, legendgroup: name });
+    if (hidden.includes(name)) continue;
+    const color = css(MODELS[name].color);
+    const withBand = bands && f.lo && (name === "Timestral-209M" || name === "Chronos-2");
+    if (withBand) {
+      traces.push({ x: xFut, y: f.hi, mode: "lines", line: { width: 0 }, hoverinfo: "skip", showlegend: false });
+      traces.push({ x: xFut, y: f.lo, mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: color + "26",
+                    hoverinfo: "skip", showlegend: false });
     }
-    traces.push({ x, y: f.mid, mode: "lines", name: label(name), legendgroup: name,
-                  line: { color, width: isBaseline ? 1.5 : 2 },
-                  hovertemplate: `%{y:.2f} ${unit}<extra>${label(name)}</extra>` });
+    traces.push({ x: xFut, y: f.mid, mode: "lines", name: MODELS[name].label,
+                  line: { color, width: MODELS[name].color === "--baseline" ? 1.5 : 2, dash: MODELS[name].color === "--baseline" ? "dot" : "solid" },
+                  hovertemplate: `%{y:.${digits}f} ${unit}<extra>${MODELS[name].label}</extra>` });
   }
-  return traces;
-}
-
-function drawChart(el, xHist, hist, xFut, actual, forecasts, unit, xTitle, origin, bands = true) {
-  const ink = css("--actual");
-  const traces = [
-    { x: xHist.concat(xFut), y: hist.concat(actual), mode: "lines", name: "Valore reale",
-      line: { color: ink, width: 1.5 }, hovertemplate: `%{y:.2f} ${unit}<extra>Reale</extra>` },
-    ...forecastTraces(xFut, forecasts, unit, bands),
-  ];
-  const axis = { gridcolor: css("--grid"), linecolor: css("--axis"), zeroline: false,
-                 tickfont: { color: css("--muted"), size: 12 } };
-  const titleFont = { color: css("--muted"), size: 12 };
-  const layout = {
+  traces.push({ x: xHist.concat(xFut), y: hist.concat(actual), mode: "lines", name: "Valore reale",
+                line: { color: css("--actual"), width: 1.5 }, hovertemplate: `%{y:.${digits}f} ${unit}<extra>Valore reale</extra>` });
+  const axis = { gridcolor: css("--grid"), linecolor: css("--axis"), zeroline: false, tickfont: { color: css("--muted"), size: 12 } };
+  Plotly.react(el, traces, {
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "system-ui, -apple-system, Segoe UI, sans-serif", color: css("--ink-2") },
-    margin: { l: 56, r: 16, t: 40, b: 48 },
-    hovermode: "x unified",
-    hoverlabel: { bgcolor: css("--surface"), bordercolor: css("--axis"), font: { color: css("--ink") } },
-    legend: { orientation: "h", x: 0, y: 1.12, font: { size: 12 } },
-    xaxis: { ...axis, title: { text: xTitle, font: titleFont } },
-    yaxis: { ...axis, title: { text: unit, font: titleFont }, rangemode: "tozero" },
-    shapes: [{ type: "line", x0: origin, x1: origin, yref: "paper", y0: 0, y1: 1,
-               line: { color: css("--axis"), width: 1 } }],
-    annotations: [{ x: origin, y: 1, yref: "paper", text: "inizio previsione", showarrow: false,
-                    xanchor: "left", yanchor: "bottom", font: { size: 11, color: css("--muted") } }],
-  };
-  Plotly.react(el, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["lasso2d", "select2d"] });
+    margin: { l: 56, r: 16, t: 28, b: 44 }, showlegend: false,
+    hovermode: "x unified", dragmode: "zoom",
+    hoverlabel: { bgcolor: css("--surface"), bordercolor: css("--axis"), font: { color: css("--ink"), size: 13 } },
+    xaxis: { ...axis, ...(xIsTime ? { hoverformat: "%a %d %b, %H:%M", tickformat: "%d %b" } : { ticksuffix: " h", hoverformat: "+.1f" }) },
+    yaxis: { ...axis, title: { text: unit, font: { color: css("--muted"), size: 12 } }, rangemode: "tozero", fixedrange: true },
+    shapes: [
+      { type: "rect", layer: "below", x0: origin, x1: end, yref: "paper", y0: 0, y1: 1, fillcolor: css("--forecast-bg"), line: { width: 0 } },
+      { type: "line", x0: origin, x1: origin, yref: "paper", y0: 0, y1: 1, line: { color: css("--axis"), width: 1 } },
+    ],
+    annotations: [
+      { x: origin, y: 1, yref: "paper", text: "storico", showarrow: false, xanchor: "right", yanchor: "bottom", xshift: -6, font: { size: 12, color: css("--muted") } },
+      { x: origin, y: 1, yref: "paper", text: "previsione (48 h)", showarrow: false, xanchor: "left", yanchor: "bottom", xshift: 6, font: { size: 12, color: css("--muted") } },
+    ],
+  }, { responsive: true, displayModeBar: false, locale: "it" });
 }
 
-function windowMae(actual, forecasts) {
-  return Object.entries(forecasts).map(([name, f]) => {
+function windowErrors(el, actual, forecasts, hidden, unit) {
+  const rows = Object.entries(forecasts).filter(([n]) => !hidden.includes(n)).map(([name, f]) => {
     let s = 0, n = 0;
-    actual.forEach((v, i) => { if (v !== null) { s += Math.abs(v - f.mid[i]); n++; } });
+    actual.forEach((v, i) => { if (v !== null && f.mid[i] !== null) { s += Math.abs(v - f.mid[i]); n++; } });
     return { name, mae: s / n };
   }).sort((a, b) => a.mae - b.mae);
+  el.innerHTML = `<span class="title">Errore medio in questa previsione:</span>` +
+    rows.map((r) => `<span>${swatch(r.name)}${MODELS[r.name].label} ${fmt(r.mae)} ${unit}</span>`).join("");
 }
 
-function windowLine(el, actual, forecasts, unit) {
-  el.innerHTML = "Errore medio in questa finestra: " +
-    windowMae(actual, forecasts).map((r) => `${swatch(r.name)}${label(r.name)} ${fmt(r.mae)} ${unit}`).join(" · ");
-}
-
-// ---------- SDWPF ----------
+// ---------- wind chart ----------
 const sdwpfCase = document.getElementById("sdwpf-case");
 const sdwpfSeries = document.getElementById("sdwpf-series");
+const sdwpfModels = Object.keys(sd.cases[0].series["Intero parco"].forecasts);
+const sdwpfState = makeChips(document.getElementById("sdwpf-chips"), "chart-sdwpf", sdwpfModels, () => drawSdwpf());
 
 function drawSdwpf() {
-  const c = DATA.sdwpf.cases.find((c) => c.case === +sdwpfCase.value);
+  const c = sd.cases.find((c) => c.case === +sdwpfCase.value);
   const s = c.series[sdwpfSeries.value];
-  const step = DATA.sdwpf.stepMinutes / 60;
-  const xHist = s.history.map((_, i) => (i - s.history.length) * step);
-  const xFut = s.actual.map((_, i) => i * step);
-  // Summing per-turbine quantiles gives no meaningful farm-level band, so the farm shows medians only.
+  const step = sd.stepMinutes / 60;
   const farm = sdwpfSeries.value === "Intero parco";
-  drawChart("sdwpf-chart", xHist, s.history, xFut, s.actual, s.forecasts, "MW", "ore dall'inizio della previsione", 0, !farm);
-  const el = document.getElementById("sdwpf-window");
-  windowLine(el, s.actual, s.forecasts, "MW");
-  if (farm) el.innerHTML += "<br>Per l'intero parco mostriamo solo le mediane: le bande sono per singola turbina.";
+  const digits = farm ? 1 : 2;
+  drawChart("sdwpf-chart", {
+    xHist: s.history.map((_, i) => (i - s.history.length) * step), hist: s.history,
+    xFut: s.actual.map((_, i) => i * step), actual: s.actual, forecasts: s.forecasts,
+    unit: "MW", origin: 0, end: s.actual.length * step, bands: sdwpfState.bands && !farm,
+    hidden: sdwpfState.hidden, xIsTime: false, digits,
+  });
+  document.getElementById("sdwpf-hint").textContent = farm
+    ? "Per l'intero parco mostriamo solo le linee: le bande valgono per la singola turbina. Trascina per ingrandire, doppio clic per tornare."
+    : "Trascina sul grafico per ingrandire un periodo, doppio clic per tornare alla vista intera.";
+  windowErrors(document.getElementById("sdwpf-window"), s.actual, s.forecasts, sdwpfState.hidden, "MW");
 }
 
-// ---------- BDG2 ----------
+// ---------- buildings chart ----------
 const bdg2Building = document.getElementById("bdg2-building");
 const bdg2Origin = document.getElementById("bdg2-origin");
+const bdg2Models = Object.keys(bd.windows[0].forecasts);
+const bdg2State = makeChips(document.getElementById("bdg2-chips"), "chart-bdg2", bdg2Models, () => drawBdg2());
 
 function fillOrigins() {
   const current = bdg2Origin.value;
-  const origins = DATA.bdg2.windows.filter((w) => w.building === bdg2Building.value).map((w) => w.origin);
+  const origins = bd.windows.filter((w) => w.building === bdg2Building.value).map((w) => w.origin);
   bdg2Origin.innerHTML = origins.map((o) =>
-    `<option value="${o}">${new Date(o).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</option>`).join("");
+    `<option value="${o}">${new Date(o).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</option>`).join("");
   // Early-2017 histories often start right after metering gaps, so default to mid-year.
   bdg2Origin.value = origins.includes(current) ? current : origins[Math.floor(origins.length / 2)];
 }
 
 function drawBdg2() {
-  const w = DATA.bdg2.windows.find((w) => w.building === bdg2Building.value && w.origin === bdg2Origin.value);
-  const t0 = new Date(w.origin).getTime();
-  const hour = 3600 * 1000;
-  const stamp = (k) => new Date(t0 + k * hour).toISOString().slice(0, 16);
-  const xHist = w.history.map((_, i) => stamp(i - w.history.length));
-  const xFut = w.actual.map((_, i) => stamp(i));
-  drawChart("bdg2-chart", xHist, w.history, xFut, w.actual, w.forecasts, "kWh", "", stamp(0));
-  windowLine(document.getElementById("bdg2-window"), w.actual, w.forecasts, "kWh");
+  const w = bd.windows.find((w) => w.building === bdg2Building.value && w.origin === bdg2Origin.value);
+  const t0 = new Date(w.origin).getTime(), hour = 3600 * 1000;
+  const stamp = (k) => new Date(t0 + k * hour).toISOString().slice(0, 16).replace("T", " ");
+  drawChart("bdg2-chart", {
+    xHist: w.history.map((_, i) => stamp(i - w.history.length)), hist: w.history,
+    xFut: w.actual.map((_, i) => stamp(i)), actual: w.actual, forecasts: w.forecasts,
+    unit: "kWh", origin: stamp(0), end: stamp(w.actual.length), bands: bdg2State.bands,
+    hidden: bdg2State.hidden, xIsTime: true, digits: 1,
+  });
+  windowErrors(document.getElementById("bdg2-window"), w.actual, w.forecasts, bdg2State.hidden, "kWh");
+}
+
+// ---------- technical section ----------
+function findings() {
+  const score = Object.fromEntries(sd.metrics.map((r) => [r.model, r.score]));
+  const T = score["Timestral-209M"], C = score["Chronos-2"], W = score["Vincitore KDD Cup 2022 (HIK)"], G = score["Baseline ufficiale GRU"];
+  const by = Object.fromEntries(bd.metrics.map((r) => [r.model, r]));
+  const timing = (m, dev) => DATA.timing.find((r) => r.model === m && r.device.startsWith(dev) && r.workload === "134 turbine").seconds;
+  const f10 = sd.first10;
+  const reversed = (f10["Chronos-2"] < f10["Timestral-209M"]) !== (C < T);
+  const items = [
+    ["Senza addestramento, vicino ai migliori",
+      `Sull'eolico Timestral fa ${fmt(T)}: ${T < G ? "meglio della baseline ufficiale (" + fmt(G) + ") e " : ""}il ${fmt(100 * (T - W) / W, 1)}% sopra il vincitore della gara (${fmt(W)}), che era addestrato su questi dati e usava anche il vento.`],
+    ["Testa a testa con Chronos-2",
+      `Timestral ha la previsione migliore in ${sd.timestralWins} casi eolici su ${sd.nCases} e un errore più basso sui consumi (${fmt(by["Timestral-209M + temp"].mae)} contro ${fmt(by["Chronos-2 + temp"].mae)} kWh).`],
+    reversed
+      ? ["Attenzione ai campioni piccoli",
+        `Su 10 soli casi la classifica si ribalta: Chronos-2 ${fmt(f10["Chronos-2"])}, Timestral ${fmt(f10["Timestral-209M"])}. Valutare un modello su pochi esempi può portare alla conclusione sbagliata.`]
+      : ["Risultati stabili",
+        `Anche su soli 10 casi l'ordine resta lo stesso: Timestral ${fmt(f10["Timestral-209M"])}, Chronos-2 ${fmt(f10["Chronos-2"])}.`],
+    ["L'informazione sul futuro aiuta",
+      `Con la temperatura l'errore di Timestral scende dal −${fmt(by["Timestral-209M"].skill, 0)}% al −${fmt(by["Timestral-209M + temp"].skill, 0)}% rispetto alla settimana precedente; Chronos-2 dal −${fmt(by["Chronos-2"].skill, 0)}% al −${fmt(by["Chronos-2 + temp"].skill, 0)}%. ` +
+      `ARIMA invece ${by["AutoARIMA + temp"].mae > by["AutoARIMA"].mae ? "peggiora: troppi parametri da stimare su 4 settimane di dati" : "migliora di poco"}.`],
+    ["Bande di incertezza",
+      `Il valore reale cade nella banda dell'80% il ${pct(by["Timestral-209M + temp"].coverage)} delle volte con Timestral e il ${pct(by["Chronos-2 + temp"].coverage)} con Chronos-2: Timestral è più affidabile quando dice quanto è incerto.`],
+    ["Velocità",
+      `Per prevedere 134 turbine: Timestral ${fmt(timing("Timestral-209M", "CPU"), 1)} s su CPU, Chronos-2 ${fmt(timing("Chronos-2", "CPU"), 1)} s su CPU e ${fmt(timing("Chronos-2", "GPU"), 1)} s su GPU, ARIMA ${fmt(timing("AutoARIMA", "CPU"), 1)} s. Un ARIMA stagionale classico richiederebbe 20-30 s per ogni singola serie oraria.`],
+  ];
+  document.getElementById("findings").innerHTML = items.map(([h, p]) => `<div class="finding"><h4>${h}</h4><p>${p}</p></div>`).join("");
+
+  document.getElementById("timing").innerHTML =
+    `<tr><th>Modello</th><th>Dove gira</th><th>1 turbina</th><th>134 turbine</th></tr>` +
+    [...new Set(DATA.timing.map((r) => r.model + "|" + r.device))].map((key) => {
+      const [m, dev] = key.split("|");
+      const t = (w) => DATA.timing.find((r) => r.model === m && r.device === dev && r.workload === w).seconds;
+      return `<tr><td><span style="display:inline-flex;align-items:center;gap:8px">${swatch(m)}${MODELS[m].label}</span></td><td>${dev}</td>
+        <td>${fmt(t("1 turbina"), 2)} s</td><td>${fmt(t("134 turbine"), 1)} s</td></tr>`;
+    }).join("");
 }
 
 // ---------- info popover: hover on desktop, tap on touch, focus via keyboard ----------
 const tooltip = document.getElementById("tooltip");
 let pinned = null;
-
 function showTip(btn) {
   tooltip.innerHTML = INFO[btn.dataset.info];
   tooltip.style.display = "block";
-  const r = btn.getBoundingClientRect();
-  const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
-  const left = Math.min(Math.max(16, r.left - 12), window.innerWidth - w - 16);
-  const top = r.bottom + 8 + h < window.innerHeight ? r.bottom + 8 : r.top - h - 8;
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${Math.max(8, top)}px`;
+  const r = btn.getBoundingClientRect(), w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+  tooltip.style.left = `${Math.min(Math.max(16, r.left - 16), window.innerWidth - w - 16)}px`;
+  tooltip.style.top = `${Math.max(8, r.bottom + 8 + h < window.innerHeight ? r.bottom + 8 : r.top - h - 8)}px`;
 }
 const hideTip = () => { tooltip.style.display = "none"; pinned = null; };
-
-document.addEventListener("mouseover", (e) => { const b = e.target.closest(".info"); if (b && !pinned) showTip(b); });
-document.addEventListener("mouseout", (e) => { if (e.target.closest(".info") && !pinned) tooltip.style.display = "none"; });
-document.addEventListener("focusin", (e) => { const b = e.target.closest(".info"); if (b) showTip(b); });
-document.addEventListener("focusout", (e) => { if (e.target.closest(".info") && !pinned) tooltip.style.display = "none"; });
+const tipTarget = (e) => e.target.closest("[data-info]");
+document.addEventListener("mouseover", (e) => { const b = tipTarget(e); if (b && !pinned) showTip(b); });
+document.addEventListener("mouseout", (e) => { if (tipTarget(e) && !pinned) tooltip.style.display = "none"; });
+document.addEventListener("focusin", (e) => { const b = tipTarget(e); if (b) showTip(b); });
+document.addEventListener("focusout", (e) => { if (tipTarget(e) && !pinned) tooltip.style.display = "none"; });
 document.addEventListener("click", (e) => {
-  const b = e.target.closest(".info");
-  if (b && pinned !== b) { showTip(b); pinned = b; } else if (!tooltip.contains(e.target)) hideTip();
+  const b = tipTarget(e);
+  if (b) { e.preventDefault(); if (pinned === b) hideTip(); else { showTip(b); pinned = b; } }
+  else if (!tooltip.contains(e.target)) hideTip();
 });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideTip(); });
 window.addEventListener("scroll", () => { if (tooltip.style.display === "block") hideTip(); }, { passive: true });
 
 // ---------- init ----------
 function init() {
-  sdwpfTable();
-  bdg2Table();
+  sdwpfTables();
+  bdg2Tables();
+  findings();
 
-  sdwpfCase.innerHTML = DATA.sdwpf.cases.map((c) => `<option value="${c.case}">Caso ${c.case} di 142</option>`).join("");
-  sdwpfSeries.innerHTML = Object.keys(DATA.sdwpf.cases[0].series).map((s) => `<option>${s}</option>`).join("");
+  sdwpfCase.innerHTML = sd.cases.map((c) => `<option value="${c.case}">Caso ${c.case} di ${sd.nCases}</option>`).join("");
+  sdwpfSeries.innerHTML = Object.keys(sd.cases[0].series).map((s) => `<option>${s}</option>`).join("");
 
   const usage = { "Manufacturing/industrial": "Manifattura", "Utility": "Centrale di servizio",
-                  "Warehouse/storage": "Magazzino", "Technology/science": "Laboratorio / data center" };
+                  "Warehouse/storage": "Magazzino", "Technology/science": "Laboratorio" };
   const order = Object.keys(usage);
-  const buildings = [...DATA.bdg2.buildings].sort((a, b) =>
-    order.indexOf(a.usage) - order.indexOf(b.usage) || b.sqm - a.sqm);
-  bdg2Building.innerHTML = buildings.map((b) =>
-    `<option value="${b.id}">${usage[b.usage] || b.usage} · ${b.detail} · ${fmt(b.sqm, 0)} m² (${b.id})</option>`).join("");
+  const buildings = [...bd.buildings].sort((a, b) => order.indexOf(a.usage) - order.indexOf(b.usage) || b.sqm - a.sqm);
+  const counts = {};
+  bdg2Building.innerHTML = buildings.map((b) => {
+    const kind = usage[b.usage] || b.usage;
+    counts[kind] = (counts[kind] || 0) + 1;
+    return `<option value="${b.id}">${kind} ${counts[kind]} · ${fmt(b.sqm, 0)} m²</option>`;
+  }).join("");
   fillOrigins();
 
   sdwpfCase.onchange = sdwpfSeries.onchange = drawSdwpf;

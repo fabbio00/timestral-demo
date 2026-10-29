@@ -43,10 +43,23 @@ def bands(q, scale=1.0, digits=3):
     return {"lo": as_list(q[:, 0], scale, digits), "mid": as_list(q[:, 1], scale, digits), "hi": as_list(q[:, 2], scale, digits)}
 
 
-def summarize(runs):
+def summarize(runs, strict_models):
+    """Mean wind score per model: official for models whose forecasts always pass the
+    official submission checks, strict (every turbine counted) for the others, since the
+    official per-turbine rule skips all-zero forecasts and those would game it."""
+    runs = runs.copy()
+    strict = runs.model.isin(strict_models)
+    runs.loc[strict, "MAE"] = runs.loc[strict, "MAE_strict"]
+    runs.loc[strict, "RMSE"] = runs.loc[strict, "RMSE_strict"]
     summary = runs.groupby("model")[["MAE", "RMSE", "seconds"]].mean()
     summary["score"] = (summary.MAE + summary.RMSE) / 2
+    summary["strict"] = summary.index.isin(strict_models)
     return summary
+
+
+def metric_row(model, r, cases):
+    return {"model": model, "score": round(r.score, 2), "mae": round(r.MAE, 2), "rmse": round(r.RMSE, 2),
+            "seconds": round(r.seconds, 1), "reference": False, "cases": cases, "strict": bool(r.strict)}
 
 
 def export_sdwpf():
@@ -77,19 +90,23 @@ def export_sdwpf():
         })
 
     runs = pd.read_csv(RESULTS_DIR / "sdwpf_smoke.csv")
-    metrics = [{"model": m, "score": round(r.score, 2), "mae": round(r.MAE, 2), "rmse": round(r.RMSE, 2),
-                "seconds": round(r.seconds, 1), "reference": False, "cases": int(runs.case.nunique())}
-               for m, r in summarize(runs).iterrows()]
+    arima_runs = pd.read_csv(RESULTS_DIR / "sdwpf_arima.csv")
+    all_runs = pd.concat([runs, arima_runs])
+    strict_models = set(all_runs.loc[~all_runs.valid.astype(bool), "model"])
+    metrics = [metric_row(m, r, int(runs.case.nunique())) for m, r in summarize(runs, strict_models).iterrows()]
     metrics += [{"model": n, "score": s, "reference": True} for n, s in KDD_REFERENCES]
 
     # ARIMA only ran on a subset of cases; the page shows every model on that subset next to it.
-    arima_runs = pd.read_csv(RESULTS_DIR / "sdwpf_arima.csv")
-    subset = summarize(pd.concat([runs[runs.case.isin(arima_runs.case)], arima_runs]))
-    r = subset.loc["AutoARIMA"]
-    metrics.append({"model": "AutoARIMA", "score": round(r.score, 2), "mae": round(r.MAE, 2), "rmse": round(r.RMSE, 2),
-                    "seconds": round(r.seconds, 1), "reference": False, "cases": int(arima_runs.case.nunique())})
+    subset = summarize(pd.concat([runs[runs.case.isin(arima_runs.case)], arima_runs]), strict_models)
+    metrics.append(metric_row("AutoARIMA", subset.loc["AutoARIMA"], int(arima_runs.case.nunique())))
+    per_case = runs.assign(score=(runs.MAE + runs.RMSE) / 2).pivot(index="case", columns="model", values="score")
+    first10 = summarize(runs[runs.case.isin(np.linspace(1, kddcup.N_CASES, 10).round().astype(int))], strict_models).score
+    rejected = all_runs.groupby("model").valid.apply(lambda v: int((~v.astype(bool)).sum()))
     return {"stepMinutes": 10, "nCases": int(runs.case.nunique()), "metrics": sorted(metrics, key=lambda r: r["score"]),
             "arimaCases": int(arima_runs.case.nunique()), "sameCases": {m: round(s, 2) for m, s in subset.score.items()},
+            "rejected": rejected.to_dict(),
+            "timestralWins": int((per_case["Timestral-209M"] < per_case["Chronos-2"]).sum()),
+            "first10": {m: round(s, 2) for m, s in first10.items()},
             "cases": cases}
 
 
@@ -115,8 +132,15 @@ def export_bdg2():
             "windows": windows}
 
 
+def export_timing():
+    path = RESULTS_DIR / "timing.csv"
+    if not path.exists():
+        raise SystemExit("No results/timing.csv: run scripts/timing.py")
+    return [{**r, "seconds": round(r["seconds"], 2)} for r in pd.read_csv(path).to_dict("records")]
+
+
 def main():
-    data = {"sdwpf": export_sdwpf(), "bdg2": export_bdg2()}
+    data = {"sdwpf": export_sdwpf(), "bdg2": export_bdg2(), "timing": export_timing()}
     out = ROOT / "frontend" / "data.js"
     out.write_text("window.DEMO_DATA = " + json.dumps(data, separators=(",", ":"), allow_nan=False) + ";\n")
     print(f"wrote {out} ({out.stat().st_size / 1e6:.1f} MB)")

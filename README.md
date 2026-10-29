@@ -21,6 +21,7 @@ senza essere addestrati su questi dati.
 | Test | i 142 casi ufficiali della fase finale | 109 finestre da 9 date del 2017 |
 | Punteggio | quello ufficiale della gara (MAE + RMSE in MW) | errore medio sul consumo reale, in % del consumo medio e in kWh; copertura delle bande |
 | Confronto esterno | vincitore 44,92 · baseline GRU 47,85 | nessuno: la gara chiedeva un compito diverso |
+| Riferimenti semplici | ripeti l'ultimo valore | ripeti la settimana prima · media delle ultime 4 settimane |
 | Licenza | CC BY 4.0 | CC BY-SA 4.0 |
 
 La gara ASHRAE chiedeva di prevedere due anni interi a partire dal 2016. Qui
@@ -37,7 +38,7 @@ uv run python scripts/sdwpf_arima.py                 # AutoARIMA su 20 casi eoli
 uv run python scripts/bdg2_smoke.py                  # edifici, tutti i modelli, ~10 min
 uv run python scripts/timing.py                      # tempi a macchina scarica, ~3 min
 uv run python scripts/export_frontend.py             # rigenera frontend/data.js in pochi secondi
-uv run python scripts/sanity_checks.py               # 21 controlli su dati, modelli e metriche
+uv run python scripts/sanity_checks.py               # 22 controlli su dati, modelli e metriche
 ```
 
 - `scripts/progress.sh [secondi]` stampa a intervalli regolari a che punto sono i benchmark e quanto manca.
@@ -54,7 +55,10 @@ l'export e i ricalcoli del punteggio non devono rifar girare i modelli.
 ## Pagina dei risultati
 
 [frontend/index.html](frontend/index.html) è una pagina statica: si apre anche
-con un doppio clic. Legge `frontend/data.js`, generato dall'export: metriche dai
+con un doppio clic. Lo stile segue il [Carbon Design System](https://carbondesignsystem.com)
+di IBM (token dei temi g10 e g100, font IBM Plex, palette categoriale per i grafici),
+riprodotto in CSS senza caricare la libreria. Nelle classifiche le barre sono errori,
+quindi più corte è meglio; il metodo più semplice è una linea tratteggiata, il minimo da battere. Legge `frontend/data.js`, generato dall'export: metriche dai
 CSV in `results/` e serie dalle previsioni in cache, niente dati inventati.
 
 A ogni push su `main` che tocca `frontend/`, il workflow
@@ -91,7 +95,8 @@ A ogni push su `main` che tocca `frontend/`, il workflow
 - Edifici industriali con almeno il 95% delle ore misurate, esclusi i 4 siti presenti nel corpus pubblico di addestramento `Salesforce/GiftEvalPretrain`.
 - Escluse le finestre con il contatore spento per più di metà delle ore. Il filtro guarda anche le 48 ore da prevedere ed è uguale per tutti i modelli.
 - La temperatura futura è quella misurata, cioè una previsione meteo perfetta: in produzione il guadagno sarà più basso.
-- L'errore principale è la WAPE: MAE sulle 48 ore tenute fuori diviso il consumo medio di quelle ore (77 kWh/h). "Ripeti la settimana prima" è un modello di confronto: anche il suo errore è misurato sul reale.
+- L'errore principale è la WAPE: MAE sulle 48 ore tenute fuori diviso il consumo medio di quelle ore (77 kWh/h). Anche i metodi semplici sono misurati sul reale.
+- Due riferimenti semplici: "ripeti la settimana prima" (il minimo, base della riduzione dell'errore) e la media della stessa ora nelle ultime 4 settimane (17,3%), che AutoARIMA non batte.
 
 **AutoARIMA**
 - Un ARIMA stagionale con periodo di 24 ore costa 20-30 secondi per serie. Per questo si usa un ARIMA non stagionale con i cicli come termini di Fourier: 6 coppie giornaliere e 6 settimanali, scelte su finestre di validazione del 2016.

@@ -5,229 +5,292 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Timestral alla prova</title>
 <meta name="description" content="Timestral, Chronos-2 e AutoARIMA a confronto su due benchmark industriali pubblici.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
+  /* Styled after the IBM Carbon Design System (carbondesignsystem.com): its g10 and g100
+     theme tokens, IBM Plex type, square layers and the categorical data-viz palette.
+     The token names below are the ones the scripts read, mapped to Carbon roles. */
   :root {
     color-scheme: light;
-    --page: #f9f9f7;
-    --surface: #fcfcfb;
-    --surface-2: #f3f2ee;
-    --ink: #0b0b0b;
-    --ink-2: #52514e;
-    --muted: #898781;
-    --grid: #e1e0d9;
-    --axis: #c3c2b7;
-    --border: rgba(11, 11, 11, 0.10);
-    --actual: #0b0b0b;
-    --forecast-bg: rgba(42, 120, 214, 0.05);
-    --timestral: #2a78d6;
-    --chronos: #eb6834;
-    --arima: #1baf7a;
-    --baseline: #898781;
-    --reference: #c3c2b7;
-    --accent-soft: #e8f0fb;
+    --page: #f4f4f4;           /* background */
+    --surface: #ffffff;        /* layer-01 */
+    --surface-2: #f4f4f4;      /* layer-02 */
+    --hover: #e8e8e8;          /* layer-hover-02 */
+    --accent: #e0e0e0;         /* layer-accent-01 */
+    --field: #f4f4f4;          /* field-02 */
+    --ink: #161616;            /* text-primary */
+    --ink-2: #525252;          /* text-secondary */
+    --muted: #6f6f6f;          /* text-helper */
+    --grid: #e0e0e0;           /* border-subtle */
+    --axis: #8d8d8d;           /* border-strong */
+    --border: #e0e0e0;
+    --link: #0f62fe;
+    --focus: #0f62fe;
+    --success: #24a148;
+    --error: #da1e28;
+    --shell: #161616;
+    --actual: #161616;
+    --forecast-bg: rgba(15, 98, 254, 0.05);
+    --timestral: #6929c4;      /* purple 70 */
+    --chronos: #1192e8;        /* cyan 50 */
+    --arima: #005d5d;          /* teal 70 */
+    --baseline: #8d8d8d;       /* gray 50 */
+    --reference: #c6c6c6;      /* gray 30 */
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23161616' d='M8 11 3 6l.7-.7L8 9.6l4.3-4.3.7.7z'/%3E%3C/svg%3E");
+    --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='2' d='m3.5 8 3 3 6-6'/%3E%3C/svg%3E");
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
-      --page: #0d0d0d;
-      --surface: #1a1a19;
-      --surface-2: #232321;
-      --ink: #f0efec;
-      --ink-2: #c3c2b7;
-      --muted: #898781;
-      --grid: #2c2c2a;
-      --axis: #383835;
-      --border: rgba(255, 255, 255, 0.10);
-      --actual: #f0efec;
-      --forecast-bg: rgba(57, 135, 229, 0.08);
-      --timestral: #3987e5;
-      --chronos: #d95926;
-      --arima: #199e70;
-      --baseline: #898781;
-      --reference: #4a4a46;
-      --accent-soft: #1c2a3d;
+      --page: #161616;
+      --surface: #262626;
+      --surface-2: #393939;
+      --hover: #474747;
+      --accent: #393939;
+      --field: #393939;
+      --ink: #f4f4f4;
+      --ink-2: #c6c6c6;
+      --muted: #a8a8a8;
+      --grid: #393939;
+      --axis: #6f6f6f;
+      --border: #393939;
+      --link: #78a9ff;
+      --focus: #ffffff;
+      --success: #42be65;
+      --error: #fa4d56;
+      --shell: #161616;
+      --actual: #f4f4f4;
+      --forecast-bg: rgba(120, 169, 255, 0.07);
+      --timestral: #a56eff;    /* purple 50 */
+      --chronos: #33b1ff;      /* cyan 40 */
+      --arima: #08bdba;        /* teal 40 */
+      --baseline: #8d8d8d;
+      --reference: #525252;
+      --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23f4f4f4' d='M8 11 3 6l.7-.7L8 9.6l4.3-4.3.7.7z'/%3E%3C/svg%3E");
+    --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23161616' stroke-width='2' d='m3.5 8 3 3 6-6'/%3E%3C/svg%3E");
     }
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --page: #0d0d0d;
-    --surface: #1a1a19;
-    --surface-2: #232321;
-    --ink: #f0efec;
-    --ink-2: #c3c2b7;
-    --muted: #898781;
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.10);
-    --actual: #f0efec;
-    --forecast-bg: rgba(57, 135, 229, 0.08);
-    --timestral: #3987e5;
-    --chronos: #d95926;
-    --arima: #199e70;
-    --baseline: #898781;
-    --reference: #4a4a46;
-    --accent-soft: #1c2a3d;
+    --page: #161616;
+    --surface: #262626;
+    --surface-2: #393939;
+    --hover: #474747;
+    --accent: #393939;
+    --field: #393939;
+    --ink: #f4f4f4;
+    --ink-2: #c6c6c6;
+    --muted: #a8a8a8;
+    --grid: #393939;
+    --axis: #6f6f6f;
+    --border: #393939;
+    --link: #78a9ff;
+    --focus: #ffffff;
+    --success: #42be65;
+    --error: #fa4d56;
+    --shell: #161616;
+    --actual: #f4f4f4;
+    --forecast-bg: rgba(120, 169, 255, 0.07);
+    --timestral: #a56eff;
+    --chronos: #33b1ff;
+    --arima: #08bdba;
+    --baseline: #8d8d8d;
+    --reference: #525252;
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23f4f4f4' d='M8 11 3 6l.7-.7L8 9.6l4.3-4.3.7.7z'/%3E%3C/svg%3E");
+    --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23161616' stroke-width='2' d='m3.5 8 3 3 6-6'/%3E%3C/svg%3E");
   }
 
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 64px; }
   body {
     margin: 0;
     background: var(--page);
     color: var(--ink);
-    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 16px/1.5 "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  main { max-width: 1080px; margin: 0 auto; padding: 48px 16px 80px; }
-  h1, h2, h3 { line-height: 1.25; letter-spacing: -0.01em; }
+  main { max-width: 1120px; margin: 0 auto; padding: 0 16px 80px; }
+  h1, h2, h3, h4 { font-weight: 400; }
   p { margin: 0 0 12px; }
-  a { color: var(--timestral); }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 
-  /* ---------- header ---------- */
-  header h1 { font-size: 32px; margin: 0 0 12px; }
-  header .intro { color: var(--ink-2); max-width: 720px; font-size: 17px; }
-  .models { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
-  .model-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-  .model-card .name { font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .model-card .kind { font-size: 13px; color: var(--muted); margin: 2px 0 6px; }
-  .model-card p { font-size: 14px; color: var(--ink-2); margin: 0; }
+  /* ---------- UI shell header ---------- */
+  .shell {
+    position: sticky; top: 0; z-index: 5; height: 48px; display: flex; align-items: center;
+    background: var(--shell); border-bottom: 1px solid #393939; color: #f4f4f4;
+  }
+  .shell-name { padding: 0 16px 0 24px; font-size: 14px; letter-spacing: 0.1px; white-space: nowrap; }
+  .shell-name strong { font-weight: 600; }
+  .shell nav { display: flex; height: 100%; overflow-x: auto; border-left: 1px solid #393939; }
+  .shell nav a { display: flex; align-items: center; padding: 0 16px; font-size: 14px; color: #c6c6c6; white-space: nowrap; }
+  .shell nav a:hover { background: #2c2c2c; color: #f4f4f4; text-decoration: none; }
+
+  /* ---------- intro ---------- */
+  .hero { padding: 64px 0 32px; }
+  .hero .eyebrow { font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+  .hero h1 { font-size: 42px; line-height: 1.19; font-weight: 300; margin: 0 0 16px; }
+  .hero .intro { color: var(--ink-2); max-width: 720px; font-size: 18px; line-height: 1.55; }
+  .models { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 32px; background: var(--grid); border: 1px solid var(--grid); }
+  .model-card { background: var(--surface); padding: 16px; }
+  .model-card .name { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .model-card .kind { font-size: 12px; letter-spacing: 0.32px; color: var(--muted); margin: 2px 0 8px; }
+  .model-card p { font-size: 14px; line-height: 1.43; color: var(--ink-2); margin: 0; }
 
   /* ---------- sections ---------- */
-  section {
-    margin-top: 56px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px;
-  }
-  section > h2 { font-size: 24px; margin: 0 0 6px; }
-  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
-  h3.block { font-size: 17px; margin: 40px 0 6px; }
-  .block-sub { color: var(--ink-2); font-size: 15px; margin-bottom: 16px; max-width: 760px; }
+  section { margin-top: 32px; background: var(--surface); padding: 32px; }
+  section > h2 { font-size: 28px; line-height: 1.29; margin: 0 0 4px; }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  h3.block { font-size: 20px; line-height: 1.4; margin: 48px 0 8px; display: flex; align-items: center; gap: 4px; }
+  .block-sub { color: var(--ink-2); font-size: 14px; line-height: 1.43; margin-bottom: 24px; max-width: 760px; }
 
-  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 0; }
-  .facts div { border-top: 2px solid var(--grid); padding-top: 12px; }
-  .facts dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
-  .facts dd { margin: 0; color: var(--ink-2); font-size: 15px; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 0; }
+  .facts div { border-top: 1px solid var(--grid); padding-top: 12px; }
+  .facts dt { font-size: 12px; letter-spacing: 0.32px; color: var(--muted); margin-bottom: 4px; }
+  .facts dd { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.43; }
 
   /* ---------- ranking bars ---------- */
-  .ranking { display: grid; gap: 10px; }
-  .rank-row { display: grid; grid-template-columns: 260px 1fr; align-items: center; gap: 16px; }
-  .rank-label { font-size: 15px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .ranking { display: grid; gap: 8px; }
+  .rank-row { display: grid; grid-template-columns: 280px 1fr; align-items: center; gap: 16px; }
+  .rank-label { font-size: 14px; display: flex; align-items: center; gap: 8px; min-width: 0; }
   .rank-label.reference { color: var(--muted); }
-  .rank-track { position: relative; height: 22px; }
-  .rank-bar { height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
+  .rank-track { position: relative; height: 24px; }
+  .rank-bar { height: 100%; min-width: 2px; }
   .rank-value { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 600;
-                font-variant-numeric: tabular-nums; padding-left: 8px; white-space: nowrap; }
+                font-variant-numeric: tabular-nums; margin-left: 2px; padding: 0 4px 0 6px; white-space: nowrap;
+                background: var(--surface); z-index: 1; }
   .rank-detail { font-weight: 400; color: var(--muted); }
-  .rank-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+  .rank-scale { font-size: 12px; letter-spacing: 0.32px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .rank-scale .swatch { margin-left: 16px; }
+  /* The minimum to beat: a dashed line across the bars instead of one more bar. */
+  .rank-threshold { position: absolute; top: -5px; bottom: -5px; border-left: 2px dashed var(--baseline); }
+  .rank-value.threshold { font-weight: 400; color: var(--muted); }
+  .swatch.threshold { width: 0; height: 14px; border-left: 2px dashed var(--baseline); }
 
-  /* ---------- tables ---------- */
-  details.more-table { margin-top: 16px; }
-  details.more-table > summary {
-    cursor: pointer; font-size: 14px; color: var(--ink-2); list-style: none; display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2);
+  /* ---------- accordion + data table ---------- */
+  details.more-table { margin-top: 24px; border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); }
+  details.more-table > summary, details.method > summary {
+    cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    min-height: 40px; padding: 8px 16px 8px 0; font-size: 14px; color: var(--ink);
   }
-  details.more-table > summary::-webkit-details-marker { display: none; }
-  details.more-table > summary::before { content: "▸"; font-size: 11px; transition: transform 0.15s; }
-  details.more-table[open] > summary::before { transform: rotate(90deg); }
-  .table-wrap { overflow-x: auto; margin-top: 16px; }
+  details.more-table > summary:hover, details.method > summary:hover { background: var(--hover); }
+  details > summary::-webkit-details-marker { display: none; }
+  details.more-table > summary::after, details.method > summary::after {
+    content: ""; flex: none; width: 16px; height: 16px; background: var(--chevron) center / 16px no-repeat; transition: transform 110ms;
+  }
+  details[open] > summary::after { transform: rotate(180deg); }
+  .table-wrap { overflow-x: auto; margin: 8px 0 16px; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th, td { height: 48px; padding: 0 16px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
   th:first-child, td:first-child { text-align: left; }
-  th { font-weight: 600; color: var(--ink-2); font-size: 13px; vertical-align: bottom; }
-  td { font-variant-numeric: tabular-nums; }
+  th { background: var(--accent); font-weight: 600; color: var(--ink); }
+  td { color: var(--ink-2); font-variant-numeric: tabular-nums; }
   tr.reference td { color: var(--muted); }
-  tr.best td { font-weight: 600; }
-  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  tr.best td { color: var(--ink); font-weight: 600; }
+  .swatch { display: inline-block; width: 12px; height: 12px; flex: none; }
   .swatch.ref { background: var(--reference); }
 
-  /* ---------- info popover ---------- */
+  /* ---------- toggletip ---------- */
   .info {
     display: inline-flex; align-items: center; justify-content: center; flex: none;
-    width: 18px; height: 18px; margin-left: 4px; padding: 0; vertical-align: 1px;
-    border: 1px solid var(--axis); border-radius: 50%; background: none; cursor: pointer;
-    font: italic 600 11px/1 Georgia, serif; color: var(--ink-2);
+    width: 16px; height: 16px; margin-left: 4px; padding: 0; vertical-align: -2px;
+    border: 1px solid var(--ink-2); border-radius: 50%; background: none; cursor: pointer;
+    font: 600 10px/1 "IBM Plex Sans", sans-serif; color: var(--ink-2);
   }
-  .info:hover, .info:focus-visible { border-color: var(--ink-2); background: var(--surface-2); outline: none; }
-  .star { border: 0; background: none; padding: 0 2px; cursor: pointer; color: var(--timestral); font: inherit; font-weight: 600; }
+  .info:hover { border-color: var(--ink); color: var(--ink); }
+  .star { border: 0; background: none; padding: 0 2px; cursor: pointer; color: var(--link); font: inherit; font-weight: 600; }
   #tooltip {
     position: fixed; z-index: 10; display: none; width: 360px; max-width: calc(100vw - 32px);
-    padding: 14px 16px; border-radius: 12px; background: var(--surface); color: var(--ink);
-    border: 1px solid var(--axis); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-    font-size: 14px; line-height: 1.55; white-space: normal; text-align: left; font-weight: 400;
+    padding: 16px; border-radius: 2px; background: var(--surface-2); color: var(--ink);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    font-size: 14px; line-height: 1.43; white-space: normal; text-align: left; font-weight: 400;
   }
-  #tooltip strong { display: block; margin-bottom: 6px; font-size: 14px; }
-  #tooltip p { margin: 0 0 8px; }
+  #tooltip strong { display: block; margin-bottom: 8px; font-weight: 600; }
+  #tooltip p { margin: 0 0 8px; color: var(--ink-2); }
   #tooltip p:last-child { margin: 0; }
 
-  /* ---------- chart ---------- */
+  /* ---------- chart controls: select, legend as checkboxes ---------- */
   .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
-  .controls label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+  .controls label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; letter-spacing: 0.32px; color: var(--ink-2); }
   select {
-    font: inherit; font-size: 15px; color: var(--ink); background: var(--page);
-    border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-width: 220px; max-width: 100%;
+    appearance: none; -webkit-appearance: none; font: inherit; font-size: 14px; letter-spacing: 0.16px; color: var(--ink);
+    height: 40px; padding: 0 48px 0 16px; min-width: 240px; max-width: 100%; cursor: pointer;
+    background: var(--field) var(--chevron) right 16px center / 16px no-repeat;
+    border: 0; border-bottom: 1px solid var(--axis); border-radius: 0;
   }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  select:hover { background-color: var(--hover); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px 20px; align-items: center; margin-bottom: 8px; }
   .chip {
-    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; cursor: pointer;
-    border: 1px solid var(--border); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer;
+    border: 0; background: none; color: var(--ink); font: inherit; font-size: 14px;
   }
-  .chip .key { width: 16px; height: 3px; border-radius: 2px; }
-  .chip[aria-pressed="false"] { color: var(--muted); background: var(--surface-2); }
-  .chip[aria-pressed="false"] .key { opacity: 0.25; }
+  .chip .key { width: 14px; height: 14px; border: 1px solid transparent; }
+  .chip[aria-pressed="false"] { color: var(--muted); }
+  .chip[aria-pressed="false"] .key { background: transparent !important; border-color: var(--axis); }
+  .chip[data-bands]::before {
+    content: ""; width: 14px; height: 14px; border: 1px solid var(--ink);
+    background: var(--ink) var(--check) center / 12px no-repeat;
+  }
+  .chip[data-bands][aria-pressed="false"]::before { background: transparent; border-color: var(--axis); }
   .chip.static { cursor: default; }
-  .chip-sep { width: 1px; height: 20px; background: var(--grid); margin: 0 4px; }
-  .chart { width: 100%; height: 440px; }
-  .chart-hint { font-size: 13px; color: var(--muted); margin-top: 4px; }
-  .window-errors { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--ink-2); margin: 12px 0 0; }
-  .window-errors span { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
-  .window-errors .title { color: var(--muted); }
+  .chip.static .key { height: 2px; width: 16px; }
+  .chip-sep { width: 1px; height: 16px; background: var(--grid); }
+  .chart { width: 100%; height: 440px; margin-top: 8px; }
+  .chart-hint { font-size: 12px; letter-spacing: 0.32px; color: var(--muted); margin-top: 4px; }
+  .window-errors { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 14px; color: var(--ink-2); margin: 16px 0 0;
+                   padding: 12px 16px; background: var(--surface-2); }
+  .window-errors span { display: inline-flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+  .window-errors .title { color: var(--muted); flex-basis: 100%; }
 
-  /* ---------- AI ideas ---------- */
+  /* ---------- AI ideas: expandable tiles ---------- */
   .ideas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .ideas details { border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; background: var(--page); }
+  .ideas details { padding: 16px; background: var(--surface-2); }
+  .ideas details:not([open]):hover { background: var(--hover); }
   .ideas summary { cursor: pointer; list-style: none; }
-  .ideas summary::-webkit-details-marker { display: none; }
-  .ideas summary h3 { font-size: 17px; margin: 0 0 6px; }
-  .ideas summary p { margin: 0; color: var(--ink-2); font-size: 15px; }
-  .ideas summary .more { display: inline-block; margin-top: 10px; font-size: 14px; color: var(--timestral); }
+  .ideas summary h3 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+  .ideas summary p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.43; }
+  .ideas summary .more { display: inline-block; margin-top: 16px; font-size: 14px; color: var(--link); }
   .ideas details[open] summary .more { display: none; }
-  .ideas .body { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--grid); font-size: 15px; color: var(--ink-2); }
-  .ideas .body ol { margin: 0 0 10px; padding-left: 20px; }
+  .ideas .body { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--axis); font-size: 14px; line-height: 1.43; color: var(--ink-2); }
+  .ideas .body ol { margin: 0 0 12px; padding-left: 20px; }
   .ideas .body li { margin-bottom: 4px; }
 
   /* ---------- technical section ---------- */
   .proscons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .proscons > div { border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; background: var(--page); }
-  .proscons h3 { font-size: 16px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
-  .proscons ul { margin: 0 0 12px; padding: 0; list-style: none; font-size: 14px; color: var(--ink-2); }
-  .proscons li { padding-left: 20px; position: relative; margin-bottom: 6px; }
-  .proscons li::before { position: absolute; left: 0; font-weight: 700; }
-  .proscons .pro li::before { content: "+"; color: var(--arima); }
-  .proscons .con li::before { content: "−"; color: var(--chronos); }
+  .proscons > div { padding: 16px; background: var(--surface-2); }
+  .proscons h3 { font-size: 16px; font-weight: 600; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+  .proscons ul { margin: 0 0 16px; padding: 0; list-style: none; font-size: 14px; line-height: 1.43; color: var(--ink-2); }
+  .proscons li { padding-left: 20px; position: relative; margin-bottom: 8px; }
+  .proscons li::before { position: absolute; left: 0; font-weight: 600; }
+  .proscons .pro li::before { content: "+"; color: var(--success); }
+  .proscons .con li::before { content: "−"; color: var(--error); }
   .findings { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .finding { border-left: 3px solid var(--timestral); background: var(--page); border-radius: 0 12px 12px 0; padding: 14px 18px; }
-  .finding h4 { margin: 0 0 4px; font-size: 15px; }
-  .finding p { margin: 0; font-size: 14px; color: var(--ink-2); }
-  details.method { border-top: 1px solid var(--grid); padding: 14px 0; }
+  .finding { border-left: 3px solid var(--link); background: var(--surface-2); padding: 16px; }
+  .finding h4 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
+  .finding p { margin: 0; font-size: 14px; line-height: 1.43; color: var(--ink-2); }
+  details.method { border-top: 1px solid var(--grid); }
   details.method:last-of-type { border-bottom: 1px solid var(--grid); }
-  details.method summary { cursor: pointer; font-weight: 600; font-size: 15px; }
-  details.method .body { color: var(--ink-2); font-size: 15px; margin-top: 10px; max-width: 820px; }
+  details.method .body { color: var(--ink-2); font-size: 14px; line-height: 1.43; padding: 0 16px 16px 0; max-width: 820px; }
   details.method ul { margin: 0; padding-left: 20px; }
-  details.method li { margin-bottom: 6px; }
+  details.method li { margin-bottom: 8px; }
 
-  footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
-  footer p { margin-bottom: 6px; }
+  footer { margin-top: 32px; font-size: 12px; letter-spacing: 0.32px; color: var(--muted); }
+  footer p { margin-bottom: 8px; }
 
   @media (max-width: 860px) {
     .models { grid-template-columns: repeat(2, 1fr); }
     .proscons { grid-template-columns: 1fr; }
   }
   @media (max-width: 720px) {
-    main { padding-top: 32px; }
-    header h1 { font-size: 26px; }
-    section { padding: 20px 16px; margin-top: 40px; }
+    .shell-name { padding-left: 16px; }
+    .hero { padding-top: 40px; }
+    .hero h1 { font-size: 32px; }
+    section { padding: 24px 16px; margin-left: -16px; margin-right: -16px; }
     .facts, .ideas, .findings { grid-template-columns: 1fr; }
+    .facts { gap: 16px; }
     .models { grid-template-columns: 1fr; }
     .rank-row { grid-template-columns: 1fr; gap: 4px; }
     .chart { height: 360px; }
@@ -237,13 +300,20 @@
 </style>
 </head>
 <body>
+<header class="shell">
+  <span class="shell-name"><strong>Timestral</strong> alla prova</span>
+  <nav aria-label="Sezioni">
+    <a href="#sdwpf">Eolico</a><a href="#bdg2">Consumi</a><a href="#ai">AI</a><a href="#tech">Dettagli tecnici</a>
+  </nav>
+</header>
 <main>
-  <header>
+  <div class="hero">
+    <p class="eyebrow">Demo · previsione di serie temporali industriali</p>
     <h1>Timestral alla prova</h1>
     <p class="intro">Abbiamo messo il nuovo modello di previsione di Mistral su due problemi industriali con risultati pubblici di riferimento.
       Timestral e Chronos-2 non sono mai stati addestrati su questi dati: ricevono lo storico e prevedono le 48 ore successive.</p>
     <div class="models" id="model-cards"></div>
-  </header>
+  </div>
 
   <!-- ===================== WIND ===================== -->
   <section id="sdwpf">
@@ -256,7 +326,7 @@
     </dl>
 
     <h3 class="block">Classifica <button class="info" type="button" data-info="kddScore" aria-label="Come si calcola il punteggio">i</button></h3>
-    <p class="block-sub">Punteggio ufficiale della gara: più è basso, più la previsione è vicina alla realtà. In grigio i risultati della gara, ottenuti con modelli addestrati su questi dati.</p>
+    <p class="block-sub">Punteggio ufficiale della gara: più è basso, più la previsione è vicina alla realtà. In grigio i risultati della gara, ottenuti con modelli addestrati su questi dati. La linea tratteggiata è il metodo più semplice, il minimo da battere.</p>
     <div class="ranking" id="sdwpf-ranking"></div>
     <details class="more-table">
       <summary>Tabella completa</summary>
@@ -289,7 +359,7 @@
 
     <h3 class="block">Classifica <button class="info" type="button" data-info="mae" aria-label="Cos'è l'errore medio">i</button></h3>
     <p class="block-sub">Di quanto la previsione si scosta, ora per ora, dal consumo reale delle 48 ore che il modello non ha visto.
-      In percentuale del consumo medio degli edifici (<span id="bdg2-mean"></span>), accanto in kWh. Previsioni con la temperatura: più è basso, meglio è.</p>
+      In percentuale del consumo medio degli edifici (<span id="bdg2-mean"></span>), accanto in kWh. Previsioni con la temperatura: più è basso, meglio è. La linea tratteggiata è il metodo più semplice, il minimo da battere.</p>
     <div class="ranking" id="bdg2-ranking"></div>
     <details class="more-table">
       <summary>Tabella completa: con e senza temperatura</summary>
@@ -420,6 +490,7 @@
           <li>Va stimato da zero per ogni serie: lento con cicli giornalieri o settimanali</li>
           <li>Richiede scelte manuali: finestra di stima, termini stagionali</li>
           <li>Nettamente meno preciso; con la temperatura peggiora</li>
+          <li>Sui consumi non fa meglio della media delle ultime 4 settimane</li>
         </ul>
       </div>
     </div>
@@ -496,6 +567,8 @@ const MODELS = {
     desc: "Assume che la potenza resti uguale all'ultimo valore misurato. La gara non l'avrebbe accettato: scartava le previsioni costanti." },
   "Seasonal naive": { label: "Ripeti la settimana prima", color: "--baseline", kind: "Riferimento minimo",
     desc: "Assume che ogni ora sia uguale alla stessa ora della settimana precedente." },
+  "Seasonal average": { label: "Media delle ultime 4 settimane", color: "--baseline", kind: "Riferimento semplice",
+    desc: "Per ogni ora fa la media della stessa ora nelle 4 settimane precedenti: una settimana anomala, per esempio con un festivo, pesa meno. È quello che si ottiene senza un modello." },
 };
 const REFERENCES = { "Vincitore KDD Cup 2022 (HIK)": "winner", "Baseline ufficiale GRU": "gru" };
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -543,30 +616,37 @@ for (const [name, m] of Object.entries(MODELS)) INFO[name] = `<strong>${m.label}
 // ---------- header cards ----------
 document.getElementById("model-cards").innerHTML = ["Timestral-209M", "Chronos-2", "AutoARIMA", "Persistence"].map((n) => {
   const m = n === "Persistence" ? { ...MODELS[n], label: "Riferimenti semplici",
-    desc: "Ripetere l'ultimo valore, o la stessa ora della settimana prima: il minimo da battere." } : MODELS[n];
+    desc: "Ripetere l'ultimo valore o la settimana prima, oppure la media delle ultime 4 settimane: il minimo da battere." } : MODELS[n];
   return `<div class="model-card"><div class="name">${swatch(n)}${m.label}</div><div class="kind">${m.kind}</div><p>${m.desc}</p></div>`;
 }).join("");
 
 // ---------- ranking bars ----------
-function ranking(el, rows, unit, digits = 2) {
-  const max = Math.max(...rows.map((r) => r.value));
+// Bars are errors, so shorter is better. threshold is the simplest method, the minimum to
+// beat: it is drawn as a dashed line across every bar rather than as one more bar.
+function ranking(el, rows, unit, digits = 2, threshold = null) {
+  const all = threshold ? [...rows, threshold] : rows;
+  const max = Math.max(...all.map((r) => r.value));
+  const pos = (v) => (100 * v / max) * (all.some((r) => r.detail) ? 0.58 : 0.82);  // leave room for the longer label on phones
   const best = rows.filter((r) => !r.reference).reduce((a, b) => (a.value < b.value ? a : b));
-  el.innerHTML = rows.map((r) => {
+  const value = (r) => `${fmt(r.value, digits)}${unit}${r.detail ? `<span class="rank-detail"> · ${r.detail}</span>` : ""}${r.strict ? strictMark : ""}`;
+  const line = threshold ? `<div class="rank-threshold" style="left:${pos(threshold.value)}%"></div>` : "";
+  el.innerHTML = `<div class="rank-row"><div></div><div class="rank-scale">← errore più basso, meglio${threshold ? `<span class="swatch threshold"></span>minimo da battere` : ""}</div></div>` + rows.map((r) => {
     const color = r.reference ? "var(--reference)" : `var(${MODELS[r.model].color})`;
     const name = r.reference
       ? `<span class="swatch ref"></span>${r.model}${infoBtn(REFERENCES[r.model], r.model)}`
       : `${swatch(r.model)}${r.label || MODELS[r.model].label}${infoBtn(r.model, r.model)}`;
-    const w = (100 * r.value / max) * (r.detail ? 0.58 : 0.82);  // leave room for the longer label on phones
     return `<div class="rank-row"><div class="rank-label ${r.reference ? "reference" : ""}" ${r === best ? 'style="font-weight:600"' : ""}>${name}</div>
-      <div class="rank-track"><div class="rank-bar" style="width:${w}%;background:${color}"></div>
-      <span class="rank-value" style="left:${w}%">${fmt(r.value, digits)}${unit}${r.detail ? `<span class="rank-detail"> · ${r.detail}</span>` : ""}${r.strict ? strictMark : ""}</span></div></div>`;
-  }).join("");
+      <div class="rank-track"><div class="rank-bar" style="width:${pos(r.value)}%;background:${color}"></div>${line}
+      <span class="rank-value" style="left:${pos(r.value)}%">${value(r)}</span></div></div>`;
+  }).join("") + (threshold ? `<div class="rank-row"><div class="rank-label reference"><span class="swatch threshold"></span>${MODELS[threshold.model].label}${infoBtn(threshold.info, "minimo da battere")}</div>
+      <div class="rank-track">${line}<span class="rank-value threshold" style="left:${pos(threshold.value)}%">${value(threshold)}</span></div></div>` : "");
 }
 
 function sdwpfTables() {
-  const rows = sd.metrics.filter((r) => r.reference || r.cases === sd.nCases);
-  ranking(document.getElementById("sdwpf-ranking"),
-    rows.map((r) => ({ model: r.model, value: r.score, reference: r.reference, strict: r.strict })), "");
+  const rows = sd.metrics.filter((r) => r.reference || r.cases === sd.nCases)
+    .map((r) => ({ model: r.model, value: r.score, reference: r.reference, strict: r.strict, info: "Persistence" }));
+  ranking(document.getElementById("sdwpf-ranking"), rows.filter((r) => r.model !== "Persistence"), "", 2,
+    rows.find((r) => r.model === "Persistence"));
   const best = sd.metrics.find((r) => !r.reference).model;
   document.getElementById("sdwpf-metrics").innerHTML =
     `<tr><th>Modello</th><th>Punteggio${infoBtn("kddScore", "punteggio")}</th><th>MAE (MW)</th><th>RMSE (MW)</th><th>Tempo per caso${infoBtn("seconds", "tempo")}</th></tr>` +
@@ -580,26 +660,26 @@ function sdwpfTables() {
 
 function bdg2Tables() {
   const by = Object.fromEntries(bd.metrics.map((r) => [r.model, r]));
-  const order = ["Timestral-209M", "Chronos-2", "AutoARIMA", "Seasonal naive"];
-  ranking(document.getElementById("bdg2-ranking"), order.map((m) => {
-    const r = by[`${m} + temp`] || by[m];
-    return { model: m, value: r.wape, detail: `${fmt(r.mae)} kWh`, label: m === "Seasonal naive" ? MODELS[m].label : undefined };
-  }), "%", 1);
+  const shown = (m) => by[`${m} + temp`] || by[m];
+  const order = ["Timestral-209M", "Chronos-2", "AutoARIMA", "Seasonal average"].sort((a, b) => shown(a).wape - shown(b).wape)
+    .concat("Seasonal naive");
+  const row = (m) => ({ model: m, value: shown(m).wape, detail: `${fmt(shown(m).mae)} kWh`, label: MODELS[m].label, info: "naive" });
+  ranking(document.getElementById("bdg2-ranking"), order.slice(0, -1).map(row), "%", 1, row("Seasonal naive"));
   document.getElementById("bdg2-mean").textContent = `${fmt(bd.meanKWh, 0)} kWh all'ora`;
   const error = (r) => `${fmt(r.wape, 1)}% <span style="color:var(--muted)">· ${fmt(r.mae)} kWh</span>`;
   document.getElementById("bdg2-metrics").innerHTML =
     `<tr><th>Modello</th><th>Errore · solo storico${infoBtn("mae", "errore medio")}</th><th>Errore · con temperatura${infoBtn("temperature", "temperatura")}</th>` +
     `<th>Riduzione errore${infoBtn("reduction", "riduzione dell'errore")}</th><th>Copertura banda${infoBtn("coverage", "copertura")}</th></tr>` +
     order.map((m, i) => {
-      const plain = by[m], temp = by[`${m} + temp`], shown = temp || plain;
-      const naive = m === "Seasonal naive";
-      return `<tr class="${i === 0 ? "best" : ""}"><td><span style="display:inline-flex;align-items:center;gap:8px">${swatch(m)}${MODELS[m].label}${naive ? infoBtn("naive", "modello di confronto") : ""}</span></td>
+      const plain = by[m], temp = by[`${m} + temp`], best = temp || plain;
+      const simple = MODELS[m].color === "--baseline";  // point forecasts only: no band to cover
+      return `<tr class="${i === 0 ? "best" : ""}"><td><span style="display:inline-flex;align-items:center;gap:8px">${swatch(m)}${MODELS[m].label}${simple ? infoBtn(m === "Seasonal naive" ? "naive" : m, "modello di confronto") : ""}</span></td>
         <td>${error(plain)}</td><td>${temp ? error(temp) : "—"}</td>
-        <td>${shown.skill > 0 ? "−" + fmt(shown.skill, 0) + "%" : "riferimento"}</td>
-        <td>${naive ? "—" : pct(shown.coverage)}</td></tr>`;
+        <td>${best.skill > 0 ? "−" + fmt(best.skill, 0) + "%" : "riferimento"}</td>
+        <td>${simple ? "—" : pct(best.coverage)}</td></tr>`;
     }).join("") +
     `<tr><td colspan="5" style="white-space:normal;color:var(--muted);font-size:13px;text-align:left;border:0;padding-top:12px">
-      Tutti gli errori, compreso quello di "ripeti la settimana prima", sono misurati sui consumi reali delle 48 ore previste.
+      Tutti gli errori, compresi quelli dei due metodi semplici, sono misurati sui consumi reali delle 48 ore previste.
       Riduzione dell'errore e copertura si riferiscono alla variante con temperatura.</td></tr>`;
 }
 
@@ -654,7 +734,7 @@ function drawChart(el, { xHist, hist, xFut, actual, forecasts, unit, origin, end
   const axis = { gridcolor: css("--grid"), linecolor: css("--axis"), zeroline: false, tickfont: { color: css("--muted"), size: 12 } };
   Plotly.react(el, traces, {
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
-    font: { family: "system-ui, -apple-system, Segoe UI, sans-serif", color: css("--ink-2") },
+    font: { family: '"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif', color: css("--ink-2") },
     margin: { l: 56, r: 16, t: 28, b: 44 }, showlegend: false,
     hovermode: "x unified", dragmode: "zoom",
     hoverlabel: { bgcolor: css("--surface"), bordercolor: css("--axis"), font: { color: css("--ink"), size: 13 } },
@@ -757,7 +837,8 @@ function findings() {
         `Anche su soli 10 casi l'ordine resta lo stesso: Timestral ${fmt(f10["Timestral-209M"])}, Chronos-2 ${fmt(f10["Chronos-2"])}.`],
     ["L'informazione sul futuro aiuta",
       `Con la temperatura l'errore di Timestral scende dal −${fmt(by["Timestral-209M"].skill, 0)}% al −${fmt(by["Timestral-209M + temp"].skill, 0)}% rispetto alla settimana precedente; Chronos-2 dal −${fmt(by["Chronos-2"].skill, 0)}% al −${fmt(by["Chronos-2 + temp"].skill, 0)}%. ` +
-      `ARIMA invece ${by["AutoARIMA + temp"].mae > by["AutoARIMA"].mae ? "peggiora: troppi parametri da stimare su 4 settimane di dati" : "migliora di poco"}.`],
+      `ARIMA invece ${by["AutoARIMA + temp"].mae > by["AutoARIMA"].mae ? "peggiora: troppi parametri da stimare su 4 settimane di dati" : "migliora di poco"}, ` +
+      `e con ${fmt(by["AutoARIMA + temp"].wape, 1)}% non batte la semplice media delle ultime 4 settimane (${fmt(by["Seasonal average"].wape, 1)}%).`],
     ["Bande di incertezza",
       `Il valore reale cade nella banda dell'80% il ${pct(by["Timestral-209M + temp"].coverage)} delle volte con Timestral e il ${pct(by["Chronos-2 + temp"].coverage)} con Chronos-2: Timestral è più affidabile quando dice quanto è incerto.`],
     ["Velocità",

@@ -11,7 +11,7 @@ import pandas as pd
 from demo import cache
 from demo.bdg2 import HORIZON, ORIGINS, SEASON, arima, load, window_key, windows
 from demo.metrics import coverage, mae, wql
-from demo.models import Chronos2Model, SeasonalNaive, TimestralModel, timed_predict
+from demo.models import Chronos2Model, SeasonalAverage, SeasonalNaive, TimestralModel, timed_predict
 from demo.paths import RESULTS_DIR
 
 
@@ -24,10 +24,10 @@ def main():
     ctx, cov, y, ids = windows(elec, temp, meta)
     print(f"{elec.shape[1]} buildings, {len(ORIGINS)} origins, {len(y)} windows of {HORIZON} h")
 
-    models = [SeasonalNaive(SEASON), TimestralModel(args.device), Chronos2Model(args.device), arima()]
+    models = [SeasonalNaive(SEASON), SeasonalAverage(SEASON), TimestralModel(args.device), Chronos2Model(args.device), arima()]
     rows = []
     for model in models:
-        for use_cov in ([False, True] if not isinstance(model, SeasonalNaive) else [False]):
+        for use_cov in ([False, True] if not isinstance(model, (SeasonalNaive, SeasonalAverage)) else [False]):
             q, seconds = timed_predict(model, ctx, HORIZON, cov if use_cov else None)
             name = model.name + (" + temp" if use_cov else "")
             cache.save("bdg2", name, [window_key(b, o) for b, o in ids], q)

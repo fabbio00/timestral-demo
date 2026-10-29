@@ -14,7 +14,7 @@ import pandas as pd
 
 from demo import bdg2, cache, kddcup
 from demo.metrics import coverage, mae, wql
-from demo.models import QUANTILES, Chronos2Model, SeasonalNaive, TimestralModel
+from demo.models import QUANTILES, Chronos2Model, SeasonalAverage, SeasonalNaive, TimestralModel
 
 warnings.filterwarnings("ignore")
 failures = []
@@ -107,6 +107,10 @@ def building_inputs():
     naive = SeasonalNaive(bdg2.SEASON).predict(ctx[:5], bdg2.HORIZON)[..., 4]
     expected = pd.DataFrame(ctx[:5].T).interpolate(limit_direction="both").T.values[:, -168:-120]
     check("buildings: 'same hour last week' baseline really repeats last week", np.allclose(naive, expected))
+    average = SeasonalAverage(bdg2.SEASON).predict(ctx[:5], bdg2.HORIZON)[..., 4]
+    filled = pd.DataFrame(ctx[:5].T).interpolate(limit_direction="both").T.values
+    expected = np.mean([filled[:, -168 * k : -168 * k + 48] for k in range(1, 5)], axis=0)
+    check("buildings: 'last 4 weeks' baseline averages the same hour of those weeks", np.allclose(average, expected, atol=1e-3))
     timestral = TimestralModel()
     plain, with_temp = timestral.predict(ctx[:5], bdg2.HORIZON), timestral.predict(ctx[:5], bdg2.HORIZON, cov[:5])
     check("buildings: temperature actually reaches Timestral (forecast changes with it)", np.abs(plain - with_temp).mean() > 1e-3,

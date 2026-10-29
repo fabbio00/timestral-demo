@@ -84,6 +84,23 @@ class SeasonalNaive:
         return np.repeat(point[..., None], len(QUANTILES), axis=-1)
 
 
+class SeasonalAverage:
+    """Mean of the last few seasons at the same position: a sturdier simple baseline,
+    one holiday or outage in last week does not carry straight into the forecast."""
+
+    name = "Seasonal average"
+
+    def __init__(self, season: int, seasons: int = 4):
+        self.season, self.seasons = season, seasons
+
+    def predict(self, context, horizon, known_covariates=None):
+        context = pd.DataFrame(np.asarray(context, dtype=np.float32).T).interpolate(limit_direction="both").fillna(0).T.values
+        last = context[:, -self.seasons * self.season :].reshape(len(context), self.seasons, self.season)
+        reps = int(np.ceil(horizon / self.season))
+        point = np.tile(last.mean(axis=1), reps)[:, :horizon]
+        return np.repeat(point[..., None], len(QUANTILES), axis=-1)
+
+
 class AutoARIMAModel:
     """Classical benchmark: one AutoARIMA fitted per series on the recent history.
 

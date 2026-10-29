@@ -1,35 +1,36 @@
 # Timestral: sintesi per il progetto
 
-28 ottobre 2026
+29 ottobre 2026 · [pagina dei risultati](https://fabbio00.github.io/timestral-demo/)
 
 ## In breve
 
-- **Timestral** (Mistral, ottobre 2026) prevede serie temporali senza essere addestrato sui dati del cliente. Gira in locale, anche senza GPU.
-- **Licenza:** è gratuito solo per le aziende sotto i **20 M$ di fatturato al mese** (circa 240 M$ l'anno), anche per le versioni fine-tunate. Sopra la soglia serve una licenza commerciale di Mistral, a sua discrezione e a prezzo non pubblico. Il cliente quasi certamente la supera.
-- **Alternativa:** Chronos-2 (Amazon) ha licenza Apache 2.0, quindi uso commerciale libero e senza soglie.
-- **Nei nostri test Timestral è il più preciso dei due**, con un margine contenuto.
+- **Cos'è:** Timestral (Mistral, ottobre 2026) prevede serie temporali senza essere addestrato sui dati del cliente. Gira in locale, anche senza GPU.
+- **Licenza, il punto critico:** è gratuito solo per le aziende sotto i **20 M$ di fatturato al mese** (circa 240 M$ l'anno), anche nelle versioni fine-tunate. Sopra la soglia serve una licenza commerciale di Mistral, a sua discrezione e a prezzo non pubblico.
+- **Alternativa:** Chronos-2 (Amazon) ha licenza Apache 2.0, quindi uso commerciale libero.
+- **Prestazioni:** nei nostri test Timestral è il più preciso. Chronos-2 è poco dietro e più veloce; il metodo statistico classico (ARIMA) resta nettamente indietro.
 
 ## Risultati: previsione a 48 ore, senza addestramento
 
-| Test pubblico | Timestral | Chronos-2 | Riferimento |
-| --- | --- | --- | --- |
-| Parco eolico, 134 turbine, 142 casi della KDD Cup 2022 (punteggio, più basso è meglio) | **46,98** | 49,25 | Vincitore della gara 44,92 · baseline ufficiale 47,85 |
-| Consumi di 14 edifici industriali: riduzione dell'errore rispetto a "ripeti la settimana prima" | **−46%** | −41% | 0% |
+| Test pubblico | Timestral | Chronos-2 | ARIMA | Riferimento |
+| --- | --- | --- | --- | --- |
+| Parco eolico, 142 casi della KDD Cup 2022 (punteggio della gara, più basso è meglio) | **47,5** | 49,9 | 57,9 ¹ | vincitore 44,9 · baseline ufficiale 47,9 |
+| Consumi di 14 edifici industriali: errore in meno rispetto a "ripeti la settimana prima" | **−46%** | −41% | −2% | 0% |
 
-Un metodo statistico classico (ARIMA) resta nettamente indietro:
-- sui consumi riduce l'errore dell'11%, contro il 46% di Timestral;
-- sull'eolico fa 57,5 contro 49,8, misurato sugli stessi 20 casi.
+¹ Misurato su 20 casi su 142, per contenere i tempi di calcolo. Sugli stessi casi Timestral fa 50,4.
+
+- Il vincitore della gara aveva addestrato i suoi modelli su questi dati e usava anche il vento. Timestral vede solo la produzione passata.
+- Il risultato sui consumi usa la temperatura come informazione aggiuntiva. Senza, Timestral riduce l'errore del 36%.
 
 ## Fine-tuning
 
-- **Timestral:** solo tramite Mistral Forge, una piattaforma enterprise a pagamento.
-- **Chronos-2:** il fine-tuning è incluso gratuitamente nella libreria open source.
-- In entrambi i casi i guadagni attesi sono piccoli. Rende di più passare al modello informazioni note in anticipo, come il piano di produzione o il meteo.
+- **Timestral:** solo tramite Mistral Forge, piattaforma enterprise a pagamento.
+- **Chronos-2:** incluso gratuitamente nella libreria open source.
+- In entrambi i casi i guadagni attesi sono piccoli. Rende di più dare al modello informazioni note in anticipo, come il piano di produzione o il meteo.
 
 ## Rischi
 
-- Timestral è in preview da due settimane. Il primo posto sui benchmark lo dichiara Mistral e nessuno l'ha ancora verificato.
-- Sull'eolico non possiamo escludere che Timestral abbia già visto quei dati durante l'addestramento.
+- Timestral è in preview da ottobre 2026. Il primo posto sui benchmark lo dichiara Mistral e nessuno l'ha ancora verificato in modo indipendente.
+- Sull'eolico non possiamo escludere che Timestral abbia già visto quei dati in addestramento: Mistral non dichiara su cosa l'ha addestrato.
 - Non sostituisce i modelli fisici del cliente: li integra.
 
 ## Decisioni richieste

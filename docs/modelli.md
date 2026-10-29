@@ -43,10 +43,19 @@ Sono **modelli di previsione già addestrati** (time series foundation model). G
 - Non indovinano eventi senza traccia nello storico, come fermi impianto o festività. Bisogna passarli come covariate note nel futuro.
 - La precisione cala con orizzonti lunghi. Nei benchmark pubblici rendono al meglio da qualche ora a qualche giorno.
 
-## Prestazioni pratiche (misurate su un Mac M4)
+## Tempi di calcolo
 
-- Timestral gira su CPU: circa 7-12 secondi per prevedere 134 serie a 48 ore, con 2.016 passi di storico ciascuna.
-- Chronos-2 usa la GPU del Mac ed è circa 3 volte più veloce.
-- Nessuno dei due richiede hardware dedicato.
+Misurati su un Mac M4, un modello alla volta. Previsione a 48 ore (288 passi) con 14 giorni di storico.
+
+| Modello | Dove gira | 1 serie | 134 serie insieme |
+| --- | --- | --- | --- |
+| Timestral-209M | CPU | 0,15 s | 9,9 s |
+| Chronos-2 | GPU del Mac | 0,03 s | 3,5 s |
+| Chronos-2 | CPU | 0,08 s | 5,1 s |
+| AutoARIMA | CPU, 10 processi | 0,05 s | 12,1 s |
+
+- Di default Timestral calcola due previsioni, sulla serie e sulla serie ribaltata di segno, e ne fa la media: è più stabile, ma impiega il doppio del tempo.
+- Su Mac Timestral non può usare la GPU, perché i suoi calcoli richiedono una precisione (float64) che la GPU Apple non supporta.
+- Nessuno dei due modelli richiede hardware dedicato.
 
 Fonti: [annuncio Timestral](https://mistral.ai/news/timestral/), [repository Timestral](https://github.com/mistralai/timestral), [Chronos-2 su Hugging Face](https://huggingface.co/amazon/chronos-2), file `config.json` dei due modelli.
